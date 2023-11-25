@@ -1,4 +1,5 @@
 import csv
+from app.modules.json_parser import settings, flows
 
 
 class Users:
@@ -18,6 +19,14 @@ class Database:
             print(f"Не удалось открыть файл: {IOError.strerror}.\nСоздаем пустой словарь.")
             self.users = []
 
+        try:
+            with open('flows.csv') as f:
+                reader = csv.reader(f, delimiter=';')
+                self.flows = list(reader)
+        except IOError:
+            print(f"Не удалось открыть файл: {IOError.strerror}.\nСоздаем пустой словарь.")
+            self.flows = []
+
     def write_users_csv(self):
         try:
             with open('users.csv', 'w') as f:
@@ -25,6 +34,25 @@ class Database:
                 writer.writerows(self.users)
         except IOError:
             print(f"Не удалось открыть файл: {IOError.strerror}.\nКонец записи.")
+
+    def add_flow(self, flow: []):
+        self.flows.append(flow)
+
+    def search_flow(self, search_name: str):
+        for flow in self.flows:
+            for name in flow[0]:
+                if name == search_name:
+                    return flow
+
+    def update_flow(self, search_flow: []):
+        for i in range(len(self.flows)):
+            for j in range(len(self.flows[i])):
+                if self.flows[i][j] == search_flow[0]:
+                    self.flows[i] = search_flow
+
+    def write_flows_config(self, tid: int):
+        new_settings = settings
+        new_settings["tid_teacher"] = tid
 
     def search_user(self, tid: int):
         for user in self.users:
@@ -53,5 +81,15 @@ class Database:
                 return 1
 
         return 0
+
+    def get_tid_students_flow(self, flows: []):
+        user_list = []
+        for user in self.users:
+            for flow in flows:
+                if user.flow == flow[0]:
+                    user_list.append(user.tid)
+
+        return user_list
+
 
     # TODO: Send file to YD
