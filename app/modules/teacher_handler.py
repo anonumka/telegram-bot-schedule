@@ -7,7 +7,7 @@ from telebot import types
 
 class TeacherHandler:
     def __init__(self):
-        self.question = Question
+        self.question = Question()
         self.flow = []
 
     def teacher_start_create_flow(self, message: types.Message):

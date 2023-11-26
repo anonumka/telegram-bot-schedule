@@ -9,6 +9,20 @@ class Users:
     flow: str
 
 
+def check_exist_teacher(tid: int):
+    if settings["tid_teacher"] == "":
+        settings["tid_teacher"] = tid
+        return 0
+
+    return 1
+
+def check_its_teacher(tid: int):
+    if settings["tid_teacher"] == tid:
+        return 1
+
+    return 0
+
+
 class Database:
     def __init__(self):
         try:
@@ -74,13 +88,6 @@ class Database:
                 return
 
         self.add_user(new_user)
-
-    def check_exist_teacher(self):
-        for user in self.users:
-            if user.group == "Преподаватель":
-                return 1
-
-        return 0
 
     def get_tid_students_flow(self, flows: []):
         user_list = []
