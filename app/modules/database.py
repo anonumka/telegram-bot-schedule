@@ -1,6 +1,9 @@
 import csv
-from app.modules.json_parser import settings, flows
+import os
+from datetime import datetime
 
+from app.modules.json_parser import settings, flows
+from app.modules.question_handler import Question
 
 class Users:
     tid: int
@@ -21,6 +24,15 @@ def check_its_teacher(tid: int):
         return 1
 
     return 0
+
+def write_question_csv(question: Question):
+    if not os.path.isdir("questions"):
+        os.mkdir("questions")
+
+    time = datetime.now().strftime("%Y-%m-%d_%H.%M")
+    with open(f'questions/{time}.csv', 'w') as f:
+        writer = csv.writer(f, delimiter=';')
+        writer.writerows(question.answer)
 
 
 class Database:
@@ -63,6 +75,9 @@ class Database:
             for j in range(len(self.flows[i])):
                 if self.flows[i][j] == search_flow[0]:
                     self.flows[i] = search_flow
+
+    def flow_list(self):
+        return self.flows
 
     def write_flows_config(self, tid: int):
         new_settings = settings

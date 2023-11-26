@@ -1,7 +1,9 @@
-from app.modules.database import Users
-from app import bot, db
-
 from telebot import types
+import time
+
+from app import bot, db
+from app.modules.database import Users, write_question_csv
+from app.modules.question_handler import Question
 
 
 def student_full_name(message: types.Message):
@@ -39,3 +41,19 @@ def student_flow(message: types.Message):
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
+
+def start_question(question: Question):
+    tid_list = db.get_tid_students_flow(flows=question.flow)
+    if len(tid_list) == 0:
+        bot.send_message()
+
+    for tid in tid_list:
+        bot.send_message(tid, f"{question.name}\nНа ответ вам {question.time} минут.")
+
+    question.status = True
+    time.sleep(60.0 * question.time)
+    stop_question(question)
+
+def stop_question(question: Question):
+    question.status = False
+    write_question_csv(question)

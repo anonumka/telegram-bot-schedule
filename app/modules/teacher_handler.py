@@ -1,11 +1,13 @@
 from app import bot, db
 from app.modules.markup_handler import teacher_main_menu
-from app.modules.question import Question
+from app.modules.question_handler import Question
+from app.modules.students_handler import start_question
 
 from telebot import types
 
 
 class TeacherHandler:
+
     def __init__(self):
         self.question = Question()
         self.flow = []
@@ -18,7 +20,7 @@ class TeacherHandler:
             self.flow.append(message.text)
             bot.register_next_step_handler(msg, self.teacher_end_create_flow)
         except Exception as e:
-            bot.reply_to(message, 'Error in time craete a flow')
+            bot.reply_to(message, f'Ошибка в создании потока: {e}')
 
     def teacher_end_create_flow(self, message: types.Message):
         try:
@@ -28,7 +30,7 @@ class TeacherHandler:
             groups_list: str = message.text
             db.add_flow([self.flow[-1], groups_list])
         except Exception as e:
-            bot.reply_to(message, 'Error in time craete a flow')
+            bot.reply_to(message, f'Ошибка в создании потока: {e}')
 
     def teacher_create_question(self, message: types.Message):
         try:
@@ -37,7 +39,7 @@ class TeacherHandler:
             msg = bot.reply_to(message, "Какой вопрос задать студентам?")
             bot.register_next_step_handler(msg, self.teacher_question_name)
         except Exception as e:
-            bot.reply_to(message, 'oooops')
+            bot.reply_to(message, f'Ошибка в создании вопроса: {e}')
 
     def teacher_question_name(self, message: types.Message):
         try:
@@ -46,14 +48,14 @@ class TeacherHandler:
             msg = bot.reply_to(message, "Задайте время в минутах")
             bot.register_next_step_handler(msg, self.teacher_question_timer)
         except Exception as e:
-            bot.reply_to(message, 'oooops')
+            bot.reply_to(message, f'Ошибка в создании вопроса: {e}')
 
     def teacher_question_timer(self, message: types.Message):
         try:
             chat_id = message.from_user.id
             bot.send_message(chat_id, "Вопрос успешно создан и выслан студентам")
-            self.question.timer = message.text
-            self.question.start()
+            self.question.time = int(message.text)
+            start_question(self.question)
         except Exception as e:
-            bot.reply_to(message, 'oooops')
+            bot.reply_to(message, f'Ошибка в создании вопроса: {e}')
 

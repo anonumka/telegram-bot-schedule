@@ -29,25 +29,26 @@ def send_welcome(message):
 
 @bot.message_handler(content_types='text')
 def receive_text(message):
-    if message.text == "Потоки" and db.check_its_teacher(message.chat.id):
+    if message.text == "Потоки" and check_its_teacher(message.chat.id):
         bot.send_message(message.chat.id, "Выберите действие с потоком", reply_markup=teacher_flows_button())
-    elif message.text == "Добавить поток" and db.check_its_teacher():
-        bot.send_message(message.chat.id, "Начат процесс создания потока")
+    elif message.text == "Добавить поток" and check_its_teacher(message.chat.id):
+        bot.send_message(message.chat.id, "Начат процесс создания потока", reply_markup=None)
         msg = bot.reply_to(message, "Введите название для потока.\nНапример: КИ20 ИВТ ЧТ 12:00")
         bot.register_next_step_handler(msg, teacher.teacher_start_create_flow)
-    # elif message.text == "Удалить поток" and db.check_its_teacher(message.chat.id):
+    # elif message.text == "Удалить поток" and check_its_teacher(message.chat.id):
         # TODO: Реализация удаления потока
-    elif message.text == "Вопрос" and db.check_its_teacher(message.chat.id):
+    elif message.text == "Вопросы" and check_its_teacher(message.chat.id):
         bot.send_message(message.chat.id, "Выберите действие с вопросом", reply_markup=teacher_question_button())
-    elif message.text == "Задать вопрос" and db.check_its_teacher(message.chat.id):
+    elif message.text == "Задать вопрос" and check_its_teacher(message.chat.id):
         bot.send_message(message.chat.id, "Начат процесс создания вопроса")
         msg = bot.reply_to(message, "Выберите поток, которому будет задан вопрос")
         bot.register_next_step_handler(msg, teacher.teacher_create_question)
-    # elif message.text == "Ответы на вопрос" and db.check_its_teacher(message.chat.id):
+    # elif message.text == "Ответы на вопрос" and check_its_teacher(message.chat.id):
         # TODO: Реализация просмотра ответа
-    elif db.check_its_teacher(message.chat.id):
+    elif check_its_teacher(message.chat.id):
         bot.send_message(message.chat.id, "Неизвестная команда", reply_markup=teacher_main_menu())
-    # elif not db.check_its_teacher(message.chat.id) and TeacherHandler.question.status == True:
-        # TODO: Записать ответ в question
+    elif teacher.question.status:
+        bot.send_message(message.chat.id, "Ваш ответ успешно добавлен")
+        teacher.question.answer.append([message.chat.id, message.text])
     else:
-        bot.send_message(message.chat.id, "Вопрос либо закончился, либо еще не начат.", reply_markup=teacher_flows_button())
+        bot.send_message(message.chat.id, "Вопрос либо закончился, либо еще не начат.")
