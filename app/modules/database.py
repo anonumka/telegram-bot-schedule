@@ -2,14 +2,21 @@ import csv
 import os
 from datetime import datetime
 
-from app.modules.json_parser import settings, flows
+from app.modules.json_parser import settings
 from app.modules.question_handler import Question
+
 
 class Users:
     tid: int
     full_name: str
     group: str
     flow: str
+
+
+class Flow:
+    id: int
+    name: str
+    groups: str
 
 
 def check_exist_teacher(tid: int):
@@ -19,11 +26,13 @@ def check_exist_teacher(tid: int):
 
     return 1
 
+
 def check_its_teacher(tid: int):
     if settings["tid_teacher"] == tid:
         return 1
 
     return 0
+
 
 def write_question_csv(question: Question):
     if not os.path.isdir("questions"):
@@ -61,20 +70,13 @@ class Database:
         except IOError:
             print(f"Не удалось открыть файл: {IOError.strerror}.\nКонец записи.")
 
-    def add_flow(self, flow: []):
+    def add_flow(self, flow: Flow):
         self.flows.append(flow)
 
     def search_flow(self, search_name: str):
         for flow in self.flows:
-            for name in flow[0]:
-                if name == search_name:
-                    return flow
-
-    def update_flow(self, search_flow: []):
-        for i in range(len(self.flows)):
-            for j in range(len(self.flows[i])):
-                if self.flows[i][j] == search_flow[0]:
-                    self.flows[i] = search_flow
+            if flow.name == search_name:
+                return flow
 
     def flow_list(self):
         return self.flows
@@ -113,5 +115,7 @@ class Database:
 
         return user_list
 
+    def get_count_flows(self):
+        return len(self.flows)
 
     # TODO: Send file to YD

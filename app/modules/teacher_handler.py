@@ -2,6 +2,7 @@ from app import bot, db
 from app.modules.markup_handler import teacher_main_menu
 from app.modules.question_handler import Question
 from app.modules.students_handler import start_question
+from app.modules.database import Flow
 
 from telebot import types
 
@@ -10,14 +11,16 @@ class TeacherHandler:
 
     def __init__(self):
         self.question = Question()
-        self.flow = []
+        self.flow = Flow()
 
     def teacher_start_create_flow(self, message: types.Message):
         try:
             chat_id = message.from_user.id
             msg = bot.reply_to(message, "Перечислите группы в потоке"
                                         ".\nНапример: КИ20-06б, КИ20-07б, КИ20-08б")
-            self.flow.append(message.text)
+
+            self.flow.id = db.get_count_flows()
+            self.flow.name = message.text
             bot.register_next_step_handler(msg, self.teacher_end_create_flow)
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании потока: {e}')
@@ -28,7 +31,8 @@ class TeacherHandler:
             bot.send_message(chat_id, "Поток добавлен успешно", reply_markup=teacher_main_menu())
 
             groups_list: str = message.text
-            db.add_flow([self.flow[-1], groups_list])
+            self.flow.groups = groups_list
+            db.add_flow(self.flow)
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании потока: {e}')
 
