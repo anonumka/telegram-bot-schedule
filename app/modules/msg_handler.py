@@ -5,7 +5,8 @@ from app import bot, db
 from app.modules.database import check_its_teacher, check_exist_teacher
 from app.modules.students_handler import student_full_name
 
-from app.modules.markup_handler import teacher_flows_button, teacher_question_button, teacher_main_menu
+from app.modules.markup_handler import (teacher_flows_button, teacher_question_button, teacher_main_menu,
+                                        teacher_get_flows)
 from app.modules.teacher_handler import TeacherHandler
 
 teacher = TeacherHandler()
@@ -45,7 +46,10 @@ def admin_flow_add(message):
 @bot.message_handler(content_types='text',
                      func=lambda m: m.text == 'Удалить поток' and check_its_teacher(m.from_user.id))
 def admin_flow_rem(message):
-    # TODO: Реализация удаления потока
+    bot.send_message(message.chat.id, "Начат процесс удаления вопроса")
+    msg = bot.reply_to(message, "Выберите поток, который будет удалён",
+                       reply_markup=teacher_get_flows(db.flow_list()))
+    bot.register_next_step_handler(msg, teacher.teacher_delete_flows)
     pass
 
 
@@ -59,21 +63,27 @@ def admin_questions_menu(message):
                      func=lambda m: m.text == 'Задать вопрос' and check_its_teacher(m.from_user.id))
 def admin_questions_create(message):
     bot.send_message(message.chat.id, "Начат процесс создания вопроса")
-    msg = bot.reply_to(message, "Выберите поток, которому будет задан вопрос")
+    msg = bot.reply_to(message, "Выберите поток, которому будет задан вопрос",
+                       reply_markup=teacher_get_flows(db.flow_list()))
     bot.register_next_step_handler(msg, teacher.teacher_create_question)
 
 
 @bot.message_handler(content_types='text',
-                     func=lambda m: m.text == 'Удалить поток' and check_its_teacher(m.from_user.id))
-def admin_flow_rem(message):
+                     func=lambda m: m.text == 'Посмотреть ответы' and check_its_teacher(m.from_user.id))
+def admin_question_view(message):
     # TODO: Реализация просмотра ответа
     pass
-
 
 @bot.message_handler(content_types='text',
                      func=lambda m: check_its_teacher(m.from_user.id))
 def admin_error_message(message):
-    bot.send_message(message.chat.id, "Неизвестная команда", reply_markup=teacher_main_menu())
+    if message.text == 'Главное меню':
+        bot.clear_step_handler_by_chat_id(chat_id=message.chat.id)
+    elif message.text == 'Назад':
+        pass
+        # TODO: Реализовать на шаг назад
+    else:
+        bot.send_message(message.chat.id, "Неизвестная команда", reply_markup=teacher_main_menu())
 
 
 @bot.message_handler(content_types='text',

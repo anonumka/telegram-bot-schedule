@@ -28,8 +28,8 @@ def teacher_question_button():
 
 def teacher_get_flows(flow_list: []):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    # for flow in flow_list:
-    item1 = KeyboardButton('Задать вопрос')
-    item2 = KeyboardButton('Ответы на вопрос')
-    markup.add(item1, item2)
+    for flow in flow_list:
+        btn = KeyboardButton(flow.name)
+        markup.add(btn)
+
     return markup

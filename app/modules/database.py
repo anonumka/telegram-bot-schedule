@@ -14,7 +14,6 @@ class Users:
 
 
 class Flow:
-    id: int
     name: str
     groups: str
 
@@ -72,6 +71,10 @@ class Database:
 
     def add_flow(self, flow: Flow):
         self.flows.append(flow)
+
+    def remove_flow(self, flow_name: Flow.name):
+        flow_del = self.search_flow(flow_name)
+        self.flows.remove(flow_del)
 
     def search_flow(self, search_name: str):
         for flow in self.flows:
