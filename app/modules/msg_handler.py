@@ -49,7 +49,7 @@ def admin_flow_rem(message):
     bot.send_message(message.chat.id, "Начат процесс удаления вопроса")
     msg = bot.reply_to(message, "Выберите поток, который будет удалён",
                        reply_markup=teacher_get_flows(db.flow_list()))
-    bot.register_next_step_handler(msg, teacher.teacher_delete_flows)
+    bot.register_next_step_handler(msg, teacher.teacher_delete_flow)
     pass
 
 

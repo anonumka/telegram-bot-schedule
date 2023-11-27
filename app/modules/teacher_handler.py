@@ -16,6 +16,7 @@ class TeacherHandler:
 
     def teacher_start_create_flow(self, message: types.Message):
         try:
+            # TODO: Исправить ввод flow и question
             chat_id = message.from_user.id
             msg = bot.reply_to(message, "Перечислите группы в потоке"
                                         ".\nНапример: КИ20-06б, КИ20-07б, КИ20-08б")
@@ -32,6 +33,7 @@ class TeacherHandler:
             groups_list: str = message.text
             self.flow.groups = groups_list
             db.add_flow(self.flow)
+            self.flow.clear()
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании потока: {e}')
 

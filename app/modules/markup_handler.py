@@ -26,10 +26,10 @@ def teacher_question_button():
     return markup
 
 
-def teacher_get_flows(flow_list: []):
+def teacher_get_flows(flows: []):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    for flow in flow_list:
-        btn = KeyboardButton(flow.name)
-        markup.add(btn)
+    flow_list = []
+    for flow in flows:
+        flow_list.append(flow.name)
 
-    return markup
+    return markup.row(*flow_list)

@@ -17,6 +17,10 @@ class Flow:
     name: str
     groups: str
 
+    def clear(self):
+        self.name = ""
+        self.groups = ""
+
 
 def check_exist_teacher(tid: int):
     if settings["tid_teacher"] == "":
@@ -72,7 +76,7 @@ class Database:
     def add_flow(self, flow: Flow):
         self.flows.append(flow)
 
-    def remove_flow(self, flow_name: Flow.name):
+    def remove_flow(self, flow_name: str):
         flow_del = self.search_flow(flow_name)
         self.flows.remove(flow_del)
 
