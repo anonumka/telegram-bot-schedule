@@ -27,8 +27,7 @@ def teacher_question_button():
 
 def teacher_flows_button(flow_list: []):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    for flow in flow_list:
-
+    # for flow in flow_list:
     item1 = KeyboardButton('Задать вопрос')
     item2 = KeyboardButton('Ответы на вопрос')
     markup.add(item1, item2)
