@@ -2,7 +2,7 @@ import csv
 import os
 from datetime import datetime
 
-from app.modules.json_parser import settings
+from app.modules.json_parser import settings, write_config
 from app.modules.question_handler import Question
 
 
@@ -22,6 +22,7 @@ def check_exist_teacher(tid: int):
     if settings["tid_teacher"] == "":
         # TODO: Запись в json-файл
         settings["tid_teacher"] = tid
+        write_config(settings)
         return 0
 
     return 1
