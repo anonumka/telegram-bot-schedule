@@ -54,18 +54,15 @@ class TeacherHandler:
 
     def teacher_delete_flow_accept(self, message: types.Message):
         try:
+            chat_id = message.from_user.id
             if message.text.lower() == "да":
                 flow_delete = self.flows_del[-1]
                 db.remove_flow(flow_delete)
                 self.flows_del.clear()
-
-                chat_id = message.from_user.id
                 bot.send_message(chat_id, "Успех.", reply_markup=teacher_main_menu())
             elif message.text.lower() == "нет":
-                chat_id = message.from_user.id
                 bot.send_message(chat_id, "Отмена.", reply_markup=teacher_main_menu())
             else:
-                chat_id = message.from_user.id
                 bot.send_message(chat_id, "Неверный ввод текста. Повторите попытку.",
                                  reply_markup=teacher_accept_button())
                 msg = bot.reply_to(message, "Вы уверены в удалении потока? (Да/нет)")
@@ -80,7 +77,7 @@ class TeacherHandler:
             question.flow = message.text
             self.questions_arr.append(question)
 
-            msg = bot.reply_to(message, "Какой вопрос задать студентам?")
+            msg = bot.reply_to(message, "Какой вопрос задать студентам?", reply_markup='')
             bot.register_next_step_handler(msg, self.teacher_question_name)
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании вопроса: {e}')
@@ -102,9 +99,11 @@ class TeacherHandler:
             # TODO: Проверка входной строки
             question = self.questions_arr[-1]
             question.time = int(message.text)
-            start_question(question)
-
             chat_id = message.from_user.id
-            bot.send_message(chat_id, "Вопрос успешно создан и выслан студентам")
+            if start_question(question):
+                bot.send_message(chat_id, "Список студентов пуст")
+            else:
+                bot.send_message(chat_id, "Вопрос успешно создан и выслан студентам")
+
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании вопроса: {e}')

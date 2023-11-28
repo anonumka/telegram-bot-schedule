@@ -47,7 +47,7 @@ def student_flow(message: types.Message):
 def start_question(question: Question):
     tid_list = db.get_tid_students_flow(flows=question.flow)
     if len(tid_list) == 0:
-        bot.send_message()
+        return 1
 
     for tid in tid_list:
         bot.send_message(tid, f"{question.name}\nНа ответ вам {question.time} минут.")
@@ -55,6 +55,7 @@ def start_question(question: Question):
     question.status = True
     time.sleep(60.0 * question.time)
     stop_question(question)
+    return 0
 
 
 def stop_question(question: Question):
