@@ -34,7 +34,6 @@ class TeacherHandler:
             flow = self.flows_arr[-1]
             flow.groups = groups_list
             db.add_flow(flow)
-            db.write_flows_csv()
             self.flows_arr.clear()
 
             chat_id = message.from_user.id

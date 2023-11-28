@@ -82,10 +82,12 @@ class Database:
 
     def add_flow(self, flow: Flow):
         self.flows.append(flow)
+        self.write_flows_csv()
 
     def remove_flow(self, flow_name: str):
         flow_del = self.search_flow(flow_name)
         self.flows.remove(flow_del)
+        self.write_flows_csv()
 
     def search_flow(self, search_name: str):
         for flow in self.flows:
