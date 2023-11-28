@@ -4,10 +4,6 @@ input_file = open('config.json')
 settings = json.load(input_file)
 input_file.close()
 
-input_file = open('flows.json')
-flows = json.load(input_file)
-input_file.close()
-
 
 def write_config(data):
     with open('config.json', 'w', encoding='utf-8') as f:
