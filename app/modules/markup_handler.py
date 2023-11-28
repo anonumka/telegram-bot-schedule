@@ -6,7 +6,6 @@ def teacher_main_menu():
     item1 = KeyboardButton('Потоки')
     item2 = KeyboardButton('Вопросы')
     markup.add(item1, item2)
-    print(markup)
     return markup
 
 

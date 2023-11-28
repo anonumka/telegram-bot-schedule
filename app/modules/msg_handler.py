@@ -1,6 +1,3 @@
-import telebot
-from telebot import types
-
 from app import bot, db
 from app.modules.database import check_its_teacher, check_exist_teacher
 from app.modules.students_handler import student_full_name
@@ -73,6 +70,7 @@ def admin_questions_create(message):
 def admin_question_view(message):
     # TODO: Реализация просмотра ответа
     pass
+
 
 @bot.message_handler(content_types='text',
                      func=lambda m: check_its_teacher(m.from_user.id))

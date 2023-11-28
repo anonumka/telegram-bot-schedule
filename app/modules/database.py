@@ -17,13 +17,10 @@ class Flow:
     name: str
     groups: str
 
-    def clear(self):
-        self.name = ""
-        self.groups = ""
-
 
 def check_exist_teacher(tid: int):
     if settings["tid_teacher"] == "":
+        # TODO: Запись в json-файл
         settings["tid_teacher"] = tid
         return 0
 
@@ -33,7 +30,6 @@ def check_exist_teacher(tid: int):
 def check_its_teacher(tid: int):
     if settings["tid_teacher"] == tid:
         return 1
-
     return 0
 
 
@@ -73,6 +69,17 @@ class Database:
         except IOError:
             print(f"Не удалось открыть файл: {IOError.strerror}.\nКонец записи.")
 
+    def write_flows_csv(self):
+        try:
+            with open('flows.csv', 'w') as f:
+                writer = csv.writer(f, delimiter=';')
+                field = ["name", "groups"]
+                writer.writerow(field)
+                for flow in self.flows:
+                    writer.writerow([flow.name, flow.groups])
+        except IOError:
+            print(f"Не удалось открыть файл: {IOError.strerror}.\nКонец записи.")
+
     def add_flow(self, flow: Flow):
         self.flows.append(flow)
 
@@ -87,10 +94,6 @@ class Database:
 
     def flow_list(self):
         return self.flows
-
-    def write_flows_config(self, tid: int):
-        new_settings = settings
-        new_settings["tid_teacher"] = tid
 
     def search_user(self, tid: int):
         for user in self.users:

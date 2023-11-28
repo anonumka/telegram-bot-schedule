@@ -25,6 +25,4 @@ for name in files:
         plugin_name = patt.stem
         load_plugins(plugin_name.replace(".py", ""))
 
-bot.enable_save_next_step_handlers(delay=2)
-bot.load_next_step_handlers()
 bot.infinity_polling()
