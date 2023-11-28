@@ -18,6 +18,14 @@ def teacher_flows_button():
     return markup
 
 
+def teacher_accept_button():
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    item1 = KeyboardButton('Да')
+    item2 = KeyboardButton('Нет')
+    markup.add(item1, item2)
+    return markup
+
+
 def teacher_question_button():
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     item1 = KeyboardButton('Задать вопрос')
