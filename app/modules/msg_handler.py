@@ -77,9 +77,6 @@ def admin_question_view(message):
 def admin_error_message(message):
     if message.text == 'Главное меню':
         bot.clear_step_handler_by_chat_id(chat_id=message.chat.id)
-    elif message.text == 'Назад':
-        pass
-        # TODO: Реализовать на шаг назад
     else:
         bot.send_message(message.chat.id, "Неизвестная команда", reply_markup=teacher_main_menu())
 
@@ -93,4 +90,5 @@ def student_send_answer(message):
 
 @bot.message_handler(content_types='text')
 def student_send_answer(message):
+    # TODO: Проверка если пользователь не авторизован
     bot.send_message(message.chat.id, "Вопрос либо закончился, либо еще не начат.")

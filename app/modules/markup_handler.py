@@ -13,7 +13,8 @@ def teacher_flows_button():
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     item1 = KeyboardButton('Добавить поток')
     item2 = KeyboardButton('Удалить поток')
-    markup.add(item1, item2)
+    item3 = KeyboardButton('Главное меню')
+    markup.add(item1, item2, item3)
     return markup
 
 
@@ -29,7 +30,8 @@ def teacher_question_button():
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     item1 = KeyboardButton('Задать вопрос')
     item2 = KeyboardButton('Ответы на вопрос')
-    markup.add(item1, item2)
+    item3 = KeyboardButton('Главное меню')
+    markup.add(item1, item2, item3)
     return markup
 
 

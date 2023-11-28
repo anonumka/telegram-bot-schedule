@@ -45,21 +45,31 @@ def write_question_csv(question: Question):
 
 class Database:
     def __init__(self):
+        self.users = []
         try:
             with open('users.csv') as f:
                 reader = csv.reader(f, delimiter=';')
                 self.users = list(reader)
         except IOError:
             print(f"Не удалось открыть файл: {IOError.strerror}.\nСоздаем пустой словарь.")
-            self.users = []
 
+        self.flows = []
         try:
             with open('flows.csv') as f:
                 reader = csv.reader(f, delimiter=';')
-                self.flows = list(reader)
+                tmp = list(reader)
+                len_reader = len(tmp)
+                if len_reader > 1:
+                    for i in range(len(tmp) - 1):
+                        if len(tmp[i+1]) == 2:
+                            flow = Flow()
+                            flow.name = tmp[i+1][0]
+                            flow.groups = tmp[i+1][1]
+                            self.flows.append(flow)
+
         except IOError:
             print(f"Не удалось открыть файл: {IOError.strerror}.\nСоздаем пустой словарь.")
-            self.flows = []
+
 
     def write_users_csv(self):
         try:
