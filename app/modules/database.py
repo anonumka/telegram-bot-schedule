@@ -6,7 +6,7 @@ from app.modules.json_parser import settings, write_config
 from app.modules.question_handler import Question
 
 
-class Users:
+class User:
     tid: int
     full_name: str
     group: str
@@ -20,7 +20,6 @@ class Flow:
 
 def check_exist_teacher(tid: int):
     if settings["tid_teacher"] == "":
-        # TODO: Запись в json-файл
         settings["tid_teacher"] = tid
         write_config(settings)
         return 0
@@ -39,9 +38,15 @@ def write_question_csv(question: Question):
         os.mkdir("questions")
 
     time = datetime.now().strftime("%Y-%m-%d_%H.%M")
-    with open(f'questions/{time}.csv', 'w') as f:
-        writer = csv.writer(f, delimiter=';')
-        writer.writerows(question.answer)
+    try:
+        with open(f'questions/{time}.csv', 'w') as f:
+            writer = csv.writer(f, delimiter=';')
+            field = ["full_name", "group", "answer"]
+            writer.writerow(field)
+            for answer in question.answers:
+                writer.writerow([answer[0], answer[1], answer[2]])
+    except IOError:
+        print(f"Не удалось открыть файл: {IOError.strerror}.\nКонец записи.")
 
 
 class Database:
@@ -50,7 +55,17 @@ class Database:
         try:
             with open('users.csv') as f:
                 reader = csv.reader(f, delimiter=';')
-                self.users = list(reader)
+                tmp = list(reader)
+                len_reader = len(tmp)
+                if len_reader > 1:
+                    for i in range(len(tmp) - 1):
+                        if len(tmp[i + 1]) == 2:
+                            user = User()
+                            user.tid = tmp[i + 1][0]
+                            user.full_name = tmp[i + 1][1]
+                            user.group = tmp[i + 1][2]
+                            user.flow = tmp[i + 1][3]
+                            self.users.append(user)
         except IOError:
             print(f"Не удалось открыть файл: {IOError.strerror}.\nСоздаем пустой словарь.")
 
@@ -62,21 +77,23 @@ class Database:
                 len_reader = len(tmp)
                 if len_reader > 1:
                     for i in range(len(tmp) - 1):
-                        if len(tmp[i+1]) == 2:
+                        if len(tmp[i + 1]) == 2:
                             flow = Flow()
-                            flow.name = tmp[i+1][0]
-                            flow.groups = tmp[i+1][1]
+                            flow.name = tmp[i + 1][0]
+                            flow.groups = tmp[i + 1][1]
                             self.flows.append(flow)
 
         except IOError:
             print(f"Не удалось открыть файл: {IOError.strerror}.\nСоздаем пустой словарь.")
 
-
     def write_users_csv(self):
         try:
             with open('users.csv', 'w') as f:
                 writer = csv.writer(f, delimiter=';')
-                writer.writerows(self.users)
+                field = ["tid", "full_name", "group", "flow"]
+                writer.writerow(field)
+                for user in self.users:
+                    writer.writerow([user.tid, user.full_name, user.group, user.flow])
         except IOError:
             print(f"Не удалось открыть файл: {IOError.strerror}.\nКонец записи.")
 
@@ -110,18 +127,17 @@ class Database:
 
     def search_user(self, tid: int):
         for user in self.users:
-            if str(user.tid) == str(tid):
+            if user.tid == tid:
                 return user
 
         return None
 
-    def add_user(self, new_user: Users):
-        user = [str(new_user.tid), new_user.full_name, new_user.group, new_user.flow]
-        self.users.append(user)
+    def add_user(self, new_user: User):
+        self.users.append(new_user)
 
-    def update_user_info(self, new_user: Users):
+    def update_user_info(self, new_user: User):
         for user in self.users:
-            if str(user.tid) == str(new_user.tid):
+            if user.tid == new_user.tid:
                 user.full_name = new_user.full_name
                 user.group = new_user.group
                 user.flow = new_user.flow

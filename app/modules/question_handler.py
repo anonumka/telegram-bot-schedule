@@ -3,7 +3,7 @@ class Question:
     flow: str
     time: int
     status: bool
-    answer: []
+    answers: []
 
     def __init__(self):
         self.name = ""

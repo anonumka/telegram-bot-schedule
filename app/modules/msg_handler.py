@@ -84,8 +84,9 @@ def admin_error_message(message):
 @bot.message_handler(content_types='text',
                      func=len(teacher.questions_arr) and teacher.questions_arr[-1].status)
 def student_send_answer(message):
+    student = db.search_user(message.from_user.id)
+    teacher.questions_arr[-1].answer.append([student.full_name, student.group, message.text])
     bot.send_message(message.chat.id, "Ваш ответ успешно добавлен")
-    teacher.questions_arr[-1].answer.append([message.chat.id, message.text])
 
 
 @bot.message_handler(content_types='text')
