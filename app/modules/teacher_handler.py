@@ -48,19 +48,28 @@ class TeacherHandler:
             self.flows_del.append(flow_delete)
 
             msg = bot.reply_to(message, "Вы уверены в удалении потока? (Да/нет)")
-            bot.register_next_step_handler(msg, self.teacher_delete_flow)
+            bot.register_next_step_handler(msg, self.teacher_delete_flow_accept)
         except Exception as e:
             bot.reply_to(message, f'Ошибка в удалении потока: {e}')
 
     def teacher_delete_flow_accept(self, message: types.Message):
         try:
             # TODO: Проверка входной строки
-            flow_delete = self.flows_del[-1]
-            db.remove_flow(flow_delete)
-            self.flows_del.clear()
+            if message.text.lower() == "да":
+                flow_delete = self.flows_del[-1]
+                db.remove_flow(flow_delete)
+                self.flows_del.clear()
 
-            chat_id = message.from_user.id
-            bot.send_message(chat_id, "Успех", reply_markup=teacher_main_menu())
+                chat_id = message.from_user.id
+                bot.send_message(chat_id, "Успех", reply_markup=teacher_main_menu())
+            elif message.text.lower() == "нет":
+                chat_id = message.from_user.id
+                bot.send_message(chat_id, "Отмена текста отменена", reply_markup=teacher_main_menu())
+            else:
+                chat_id = message.from_user.id
+                bot.send_message(chat_id, "Неверный ввод текста. Повторите попытку", reply_markup=teacher_main_menu())
+                msg = bot.reply_to(message, "Вы уверены в удалении потока? (Да/нет)")
+                bot.register_next_step_handler(msg, self.teacher_delete_flow_accept)
         except Exception as e:
             bot.reply_to(message, f'Ошибка в удалении потока: {e}')
 
