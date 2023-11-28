@@ -36,7 +36,9 @@ def student_flow(message: types.Message):
         chat_id = message.from_user.id
         user = db.search_user(message.from_user.id)
         user.flow = message.text
-        bot.send_message(chat_id, f"Вы успешно добавлены в базу со следующими данными:\nИмя:{user.full_name}, группа:{user.group}, поток:{user.flow}")
+        bot.send_message(chat_id,
+                         f"Вы успешно добавлены в базу со следующими данными:\nИмя:{user.full_name}, "
+                         f"группа:{user.group}, поток:{user.flow}")
         db.update_user_info(user)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -53,6 +55,7 @@ def start_question(question: Question):
     question.status = True
     time.sleep(60.0 * question.time)
     stop_question(question)
+
 
 def stop_question(question: Question):
     question.status = False
