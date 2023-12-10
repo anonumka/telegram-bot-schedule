@@ -37,14 +37,15 @@ def write_question_csv(question: Question):
     if not os.path.isdir("questions"):
         os.mkdir("questions")
 
-    time = datetime.now().strftime("%Y-%m-%d_%H.%M")
+    time = datetime.now().strftime("%H:%M-%d:%m:%Y")
     try:
-        with open(f'questions/{time}.csv', 'w') as f:
+        with open(f'questions/{question.flow}-{time}.csv', 'w') as f:
             writer = csv.writer(f, delimiter=';')
             field = ["full_name", "group", "answer"]
             writer.writerow(field)
             for answer in question.answers:
-                writer.writerow([answer[0], answer[1], answer[2]])
+                mark = 1 if answer[2] == question.answer else 0
+                writer.writerow([answer[0], answer[1], answer[2], mark])
     except IOError:
         print(f"Не удалось открыть файл: {IOError.strerror}.\nКонец записи.")
 

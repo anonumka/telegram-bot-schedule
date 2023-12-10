@@ -16,7 +16,6 @@ class TeacherHandler:
 
     def teacher_start_create_flow(self, message: types.Message):
         try:
-            # TODO: Исправить ввод flow и question
             flow = Flow()
             flow.name = message.text
             self.flows_arr.append(flow)
@@ -78,7 +77,19 @@ class TeacherHandler:
             self.questions_arr.append(question)
 
             msg = bot.reply_to(message, "Какой вопрос задать студентам?", reply_markup='')
-            bot.register_next_step_handler(msg, self.teacher_question_name)
+            bot.register_next_step_handler(msg, self.teacher_question_answer)
+        except Exception as e:
+            bot.reply_to(message, f'Ошибка в создании вопроса: {e}')
+
+    def teacher_question_answer(self, message: types.Message):
+        try:
+            # TODO: Проверка входной строки
+            question = self.questions_arr[-1]
+            question.name = message.text
+            self.questions_arr[-1] = question
+
+            msg = bot.reply_to(message, "Какой правильный ответ на данный вопрос?")
+            bot.register_next_step_handler(msg, self.teacher_question_timer)
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании вопроса: {e}')
 
@@ -86,7 +97,7 @@ class TeacherHandler:
         try:
             # TODO: Проверка входной строки
             question = self.questions_arr[-1]
-            question.name = message.text
+            question.answer = message.text
             self.questions_arr[-1] = question
 
             msg = bot.reply_to(message, "Задайте время в минутах")
