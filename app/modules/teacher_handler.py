@@ -1,8 +1,9 @@
-from app import bot, db
-from app.modules.markup_handler import teacher_main_menu, teacher_accept_button
+import time
+
+from app import bot, database
+from app.modules.markup_handler import teacher_main_menu, teacher_accept_button, only_back_button
 from app.modules.question_handler import Question
-from app.modules.students_handler import start_question
-from app.modules.database import Flow
+from app.modules.database import Flow, add_marks_to_table_performance
 
 from telebot import types
 
@@ -14,26 +15,47 @@ class TeacherHandler:
         self.questions_arr = []
         self.flows_del = []
 
+    def check_back_button(self, message):
+        if message.text == "Назад":
+            self.flows_arr.clear()
+            self.flows_del.clear()
+            self.questions_arr.clear()
+
+            bot.clear_step_handler_by_chat_id(chat_id=message.chat.id)
+            bot.reply_to(message, "Выберите действие", reply_markup=teacher_main_menu())
+            return 1
+        return 0
+
     def teacher_start_create_flow(self, message: types.Message):
         try:
+            if self.check_back_button(message):
+                return
+
             flow = Flow()
             flow.name = message.text
-            self.flows_arr.append(flow)
+            if len(self.flows_arr) == 0:
+                self.flows_arr.append(flow)
+            else:
+                self.flows_arr[-1] = flow
 
-            msg = bot.reply_to(message, "Перечислите группы в потоке"
-                                        ".\nНапример: КИ20-06б, КИ20-07б, КИ20-08б")
+            msg = bot.reply_to(message, "Перечислите группы в потоке\n"
+                                        "Например: КИ20-06б, КИ20-07б, КИ20-08б")
             bot.register_next_step_handler(msg, self.teacher_end_create_flow)
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании потока: {e}')
 
     def teacher_end_create_flow(self, message: types.Message):
         try:
+            if self.check_back_button(message):
+                return
+
             # TODO: Проверка входной строки
             groups_list: str = message.text
             flow = self.flows_arr[-1]
             flow.groups = groups_list
-            db.add_flow(flow)
             self.flows_arr.clear()
+
+            database.add_flow(flow)
 
             chat_id = message.from_user.id
             bot.send_message(chat_id, "Поток добавлен успешно", reply_markup=teacher_main_menu())
@@ -42,6 +64,9 @@ class TeacherHandler:
 
     def teacher_delete_flow(self, message: types.Message):
         try:
+            if self.check_back_button(message):
+                return
+
             # TODO: Проверка входной строки
             flow_delete = message.text
             self.flows_del.append(flow_delete)
@@ -53,11 +78,13 @@ class TeacherHandler:
 
     def teacher_delete_flow_accept(self, message: types.Message):
         try:
+            if self.check_back_button(message):
+                return
+
             chat_id = message.from_user.id
             if message.text.lower() == "да":
                 flow_delete = self.flows_del[-1]
-                db.remove_flow(flow_delete)
-                self.flows_del.clear()
+                database.remove_flow(flow_delete)
                 bot.send_message(chat_id, "Успех.", reply_markup=teacher_main_menu())
             elif message.text.lower() == "нет":
                 bot.send_message(chat_id, "Отмена.", reply_markup=teacher_main_menu())
@@ -66,55 +93,84 @@ class TeacherHandler:
                                  reply_markup=teacher_accept_button())
                 msg = bot.reply_to(message, "Вы уверены в удалении потока? (Да/нет)")
                 bot.register_next_step_handler(msg, self.teacher_delete_flow_accept)
+                return
+
+            self.flows_del.clear()
         except Exception as e:
             bot.reply_to(message, f'Ошибка в удалении потока: {e}')
 
     def teacher_create_question(self, message: types.Message):
         try:
+            if self.check_back_button(message):
+                return
+
+            if len(self.questions_arr) > 0:
+                bot.clear_step_handler_by_chat_id(chat_id=message.chat.id)
+                bot.reply_to(message, "Дождитель конца прошлого вопроса", reply_markup=teacher_main_menu())
+                return
+
             # TODO: Проверка входной строки
             question = Question()
             question.flow = message.text
             self.questions_arr.append(question)
 
-            msg = bot.reply_to(message, "Какой вопрос задать студентам?", reply_markup='')
+            msg = bot.reply_to(message, "Какой вопрос задать студентам?", reply_markup=only_back_button())
+            bot.register_next_step_handler(msg, self.teacher_question_name)
+        except Exception as e:
+            bot.reply_to(message, f'Ошибка в создании вопроса: {e}')
+
+    def teacher_question_name(self, message: types.Message):
+        try:
+            if self.check_back_button(message):
+                return
+
+            question = self.questions_arr[-1]
+            question.name = message.text
+            self.questions_arr[-1] = question
+
+            msg = bot.reply_to(message, "Какой правильный ответ на данный вопрос?", reply_markup=only_back_button())
             bot.register_next_step_handler(msg, self.teacher_question_answer)
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании вопроса: {e}')
 
     def teacher_question_answer(self, message: types.Message):
         try:
-            # TODO: Проверка входной строки
-            question = self.questions_arr[-1]
-            question.name = message.text
-            self.questions_arr[-1] = question
+            if self.check_back_button(message):
+                return
 
-            msg = bot.reply_to(message, "Какой правильный ответ на данный вопрос?")
-            bot.register_next_step_handler(msg, self.teacher_question_timer)
-        except Exception as e:
-            bot.reply_to(message, f'Ошибка в создании вопроса: {e}')
-
-    def teacher_question_name(self, message: types.Message):
-        try:
-            # TODO: Проверка входной строки
             question = self.questions_arr[-1]
             question.answer = message.text
             self.questions_arr[-1] = question
 
-            msg = bot.reply_to(message, "Задайте время в минутах")
+            msg = bot.reply_to(message, "Задайте время в минутах", reply_markup=only_back_button())
             bot.register_next_step_handler(msg, self.teacher_question_timer)
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании вопроса: {e}')
 
     def teacher_question_timer(self, message: types.Message):
         try:
-            # TODO: Проверка входной строки
+            if self.check_back_button(message):
+                return
+
+            answer = message.text
+            if not answer.isdigit() or int(answer) < 0:
+                msg = bot.reply_to(message, "Используйте целое положительное число для установки минут",
+                                   reply_markup=only_back_button())
+                bot.register_next_step_handler(msg, self.teacher_question_timer)
+                return
+
             question = self.questions_arr[-1]
-            question.time = int(message.text)
+            question.time = int(answer)
             chat_id = message.from_user.id
-            if start_question(question):
-                bot.send_message(chat_id, "Список студентов пуст")
-            else:
-                bot.send_message(chat_id, "Вопрос успешно создан и выслан студентам")
+
+            tid_list = database.get_tid_students_flow(question.flow)
+            for tid in tid_list:
+                bot.send_message(tid, f"{question.name}\nНа ответ вам {question.time} минут.")
+
+            status = question.start_question()
+            bot.send_message(chat_id, status, reply_markup=teacher_main_menu())
+            time.sleep(60.0 * question.time)
+            add_marks_to_table_performance(question)
 
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании вопроса: {e}')

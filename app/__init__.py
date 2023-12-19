@@ -6,6 +6,4 @@ token = settings['token']
 
 bot = TeleBot(token)
 
-db = Database()
-
-
+database = Database()

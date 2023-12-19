@@ -1,44 +1,59 @@
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 
 
-def teacher_main_menu():
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    item1 = KeyboardButton('Потоки')
-    item2 = KeyboardButton('Вопросы')
-    markup.add(item1, item2)
+def create_keyboard_layout(items: [], additional_buttons=None, back_button=False):
+    if additional_buttons is None:
+        additional_buttons = []
+    markup = ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+
+    row = []
+    row_num = 0
+    for count, item in enumerate(items, 1):
+        row.append(KeyboardButton(text=item))
+        if count % 3 == 0:
+            markup.row(*row)
+            row_num += 1
+            row = []
+    if row:
+        markup.row(*row)
+
+    for button in additional_buttons:
+        markup.add(KeyboardButton(text=button))
+
+    if back_button:
+        markup.add(KeyboardButton(text="Назад"))
+
     return markup
+
+
+def teacher_main_menu():
+    items = ['Потоки', 'Вопросы']
+    return create_keyboard_layout(items, back_button=False)
 
 
 def teacher_flows_button():
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    item1 = KeyboardButton('Добавить поток')
-    item2 = KeyboardButton('Удалить поток')
-    item3 = KeyboardButton('Главное меню')
-    markup.add(item1, item2, item3)
-    return markup
+    items = ['Добавить поток', 'Удалить поток']
+    return create_keyboard_layout(items, back_button=True)
 
 
 def teacher_accept_button():
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    item1 = KeyboardButton('Да')
-    item2 = KeyboardButton('Нет')
-    markup.add(item1, item2)
-    return markup
+    items = ['Да', 'Нет']
+    return create_keyboard_layout(items, back_button=True)
 
 
 def teacher_question_button():
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    item1 = KeyboardButton('Задать вопрос')
-    item2 = KeyboardButton('Ответы на вопрос')
-    item3 = KeyboardButton('Главное меню')
-    markup.add(item1, item2, item3)
-    return markup
+    items = ['Задать вопрос', 'Ответы на вопрос']
+    return create_keyboard_layout(items, back_button=True)
 
 
-def teacher_get_flows(flows: []):
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    flow_list = []
-    for flow in flows:
-        flow_list.append(flow.name)
+def teacher_get_flows(flows: dict):
+    return create_keyboard_layout(list(flows), back_button=True)
 
-    return markup.row(*flow_list)
+
+def students_main_menu():
+    items = ['Поменять группу']
+    return create_keyboard_layout(items, back_button=False)
+
+
+def only_back_button():
+    return create_keyboard_layout([], back_button=True)
