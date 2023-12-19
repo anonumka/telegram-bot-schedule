@@ -6,6 +6,7 @@ import yadisk
 
 from app.modules.json_parser import settings, write_config
 from app.modules.question_handler import Question
+from app.modules.logger import message_log_system
 
 folder_tables = "stats/"
 if not os.path.isdir(folder_tables):
@@ -31,6 +32,7 @@ class Flow:
 
 
 def check_exist_teacher(tid: int):
+    message_log_system(0, f"{tid} is teacher")
     if settings["tid_teacher"] == "":
         settings["tid_teacher"] = tid
         write_config(settings)
@@ -101,9 +103,7 @@ def add_marks_to_table_performance(question: Question):
         next(reader)
         rows = list(reader)
 
-        time = datetime.now().strftime("%d:%m:%Y %H:%M")
-        column_answers = [time]
-
+        column_answers = [question.time]
         for row in rows:
             find = False
             for full_name, group, answer_student in question.answers:
@@ -130,6 +130,7 @@ def add_marks_to_table_performance(question: Question):
 
     add_column_to_csv(path_file, filename, column_answers)
     sort_two_column_csv_file(path_file)
+    message_log_system(0, f"File `{filename}` successfully recorded")
     send_file_to_yandex_disk(path_file)
 
 
@@ -142,6 +143,7 @@ def send_file_to_yandex_disk(filepath: str):
         y.mkdir('ScheduleBot')
 
     y.upload(filepath, f'/ScheduleBot/{filename}', overwrite=True)
+    message_log_system(0, f"{filename} uploaded to Yandex Disk")
 
 
 class Database:
@@ -160,7 +162,7 @@ class Database:
                         user.flow = flows
                         self.users[tid] = user
         except IOError:
-            print(f"Ошибка: {IOError.strerror}.\nСоздаем новый файл.")
+            message_log_system(1, f"File `users.csv` is not exist: {IOError.strerror}")
 
         self.flows = dict()
         try:
@@ -175,19 +177,24 @@ class Database:
                         self.flows[name] = flow
 
         except IOError:
-            print(f"Ошибка: {IOError.strerror}.\nСоздаем новый файл.")
+            message_log_system(1, f"File `flows.csv` is not exist: {IOError.strerror}")
 
-    def write_users_csv(self, user: User):
+    def write_users_csv(self):
         filename = 'users.csv'
-        with open(filename, 'w') as f:
-            writer = csv.writer(f, delimiter=';')
-            field = ["tid", "full_name", "group", "flow"]
-            writer.writerow(field)
-            writer.writerow([user.tid, user.full_name, user.group])
+        try:
+            with open(filename, 'w') as f:
+                writer = csv.writer(f, delimiter=';')
+                field = ["tid", "full_name", "group", "flow"]
+                writer.writerow(field)
+                for tid, full_name, group in self.users:
+                    writer.writerow([tid, full_name, group])
+        except IOError:
+            message_log_system(1, f"File `{filename}` failed on create: {IOError.strerror}")
 
     def write_flows_csv(self):
+        filename = 'flows.csv'
         try:
-            with open('flows.csv', 'w') as f:
+            with open(filename, 'w') as f:
                 writer = csv.writer(f, delimiter=';')
                 field = ["name", "groups"]
                 writer.writerow(field)
@@ -195,7 +202,7 @@ class Database:
                     flow = self.flows[flow_name]
                     writer.writerow([flow.name, flow.groups])
         except IOError:
-            print(f"Не удалось открыть файл: {IOError.strerror}.\nКонец записи.")
+            message_log_system(1, f"File `{filename}` failed on create: {IOError.strerror}")
 
     def add_flow(self, flow: Flow):
         self.flows[flow.name] = flow

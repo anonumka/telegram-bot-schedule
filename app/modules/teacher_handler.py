@@ -4,6 +4,7 @@ from app import bot, database
 from app.modules.markup_handler import teacher_main_menu, teacher_accept_button, only_back_button
 from app.modules.question_handler import Question
 from app.modules.database import Flow, add_marks_to_table_performance
+from app.modules.logger import message_log_system
 
 from telebot import types
 
@@ -43,6 +44,7 @@ class TeacherHandler:
             bot.register_next_step_handler(msg, self.teacher_end_create_flow)
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании потока: {e}')
+            message_log_system(2, f"Failed creation a flow: {e}")
 
     def teacher_end_create_flow(self, message: types.Message):
         try:
@@ -55,11 +57,14 @@ class TeacherHandler:
             self.flows_arr.clear()
 
             database.add_flow(flow)
+            message_log_system(0, f"{message.chat.id} create a flow "
+                                  f"`{flow.name}` with `{flow.groups}` groups")
 
             chat_id = message.from_user.id
             bot.send_message(chat_id, "Поток добавлен успешно", reply_markup=teacher_main_menu())
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании потока: {e}')
+            message_log_system(2, f"Failed creation a flow: {e}")
 
     def teacher_delete_flow(self, message: types.Message):
         try:
@@ -76,6 +81,7 @@ class TeacherHandler:
             bot.register_next_step_handler(msg, self.teacher_delete_flow_accept)
         except Exception as e:
             bot.reply_to(message, f'Ошибка в удалении потока: {e}')
+            message_log_system(2, f"Failed deleting a flow: {e}")
 
     def teacher_delete_flow_accept(self, message: types.Message):
         try:
@@ -87,6 +93,8 @@ class TeacherHandler:
                 flow_delete = self.flows_del[-1]
                 database.remove_flow(flow_delete)
                 bot.send_message(chat_id, "Успех.", reply_markup=teacher_main_menu())
+
+                message_log_system(0, f"{message.chat.id} remove a flow `{flow_delete}`")
             elif message.text.lower() == "нет":
                 bot.send_message(chat_id, "Отмена.", reply_markup=teacher_main_menu())
             else:
@@ -99,6 +107,7 @@ class TeacherHandler:
             self.flows_del.clear()
         except Exception as e:
             bot.reply_to(message, f'Ошибка в удалении потока: {e}')
+            message_log_system(2, f"Failed deleting a flow: {e}")
 
     def teacher_create_question(self, message: types.Message):
         try:
@@ -122,6 +131,7 @@ class TeacherHandler:
             bot.register_next_step_handler(msg, self.teacher_question_name)
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании вопроса: {e}')
+            message_log_system(2, f"Failed creation a question: {e}")
 
     def teacher_question_name(self, message: types.Message):
         try:
@@ -136,6 +146,7 @@ class TeacherHandler:
             bot.register_next_step_handler(msg, self.teacher_question_answer)
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании вопроса: {e}')
+            message_log_system(2, f"Failed creation a question: {e}")
 
     def teacher_question_answer(self, message: types.Message):
         try:
@@ -150,6 +161,7 @@ class TeacherHandler:
             bot.register_next_step_handler(msg, self.teacher_question_timer)
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании вопроса: {e}')
+            message_log_system(2, f"Failed creation a question: {e}")
 
     def teacher_question_timer(self, message: types.Message):
         try:
@@ -167,6 +179,10 @@ class TeacherHandler:
             question.time = int(answer)
             chat_id = message.from_user.id
 
+            message_log_system(0, f"{message.chat.id} create a question "
+                                  f"`{question.name}` with answer `{question.answer}` for "
+                                  f"`{question.flow}` on `{question.time}` minutes.")
+
             tid_list = database.get_tid_students_flow(question.flow)
             for tid in tid_list:
                 bot.send_message(tid, f"{question.name}\nНа ответ вам {question.time} минут.")
@@ -180,3 +196,4 @@ class TeacherHandler:
 
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании вопроса: {e}')
+            message_log_system(2, f"Failed creation a question: {e}")
