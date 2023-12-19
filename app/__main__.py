@@ -5,6 +5,7 @@ from importlib import util
 from pathlib import Path
 
 from app import bot
+from app.modules.logger import message_log_system
 
 
 def load_plugins(module_name):
@@ -25,4 +26,8 @@ for name in files:
         plugin_name = patt.stem
         load_plugins(plugin_name.replace(".py", ""))
 
-bot.infinity_polling()
+try:
+    message_log_system(0, f"Bot is started")
+    bot.infinity_polling()
+except Exception as e:
+    message_log_system(2, f"Failed to start bot: {e}")

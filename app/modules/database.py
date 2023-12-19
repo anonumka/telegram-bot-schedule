@@ -152,6 +152,7 @@ class Database:
         try:
             with open('users.csv', 'r+') as f:
                 reader = csv.reader(f, delimiter=';')
+                message_log_system(0, f"Count of users: {len(list(reader))}")
                 if len(list(reader)) != 0:
                     next(reader)
                     for tid, name, group, flows in reader:
@@ -168,6 +169,7 @@ class Database:
         try:
             with open('flows.csv', 'r+') as f:
                 reader = csv.reader(f, delimiter=';')
+                message_log_system(0, f"Count of flows: {len(list(reader))}")
                 if len(list(reader)) != 0:
                     next(reader)
                     for name, groups in reader:
