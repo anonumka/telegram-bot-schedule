@@ -1,9 +1,9 @@
 from app import bot, database
 from app.modules.database import check_its_teacher, check_exist_teacher
-from app.modules.students_handler import student_full_name
+from app.modules.students_handler import student_full_name, student_change_about_me
 
 from app.modules.markup_handler import (teacher_flows_button, teacher_question_button, teacher_main_menu,
-                                        teacher_get_flows)
+                                        teacher_get_flows, students_change_about_me_buttons)
 from app.modules.teacher_handler import TeacherHandler
 
 teacher = TeacherHandler()
@@ -67,8 +67,12 @@ def admin_questions_create(message):
 @bot.message_handler(content_types='text',
                      func=lambda m: m.text == 'Посмотреть ответы' and check_its_teacher(m.from_user.id))
 def admin_question_view(message):
-    # TODO: Реализация просмотра ответа
-    pass
+    question = teacher.questions_arr[-1]
+    res_text = f"Вопрос: {question.name}\nПравильный ответ: {question.answer}\n"
+    for answer in question.answers:
+        res_text += f"{answer[0]}: {answer[2]}\n"
+
+    bot.send_message(message.chat.id, res_text, reply_markup=teacher_main_menu())
 
 
 @bot.message_handler(content_types='text',
@@ -82,14 +86,26 @@ def admin_error_message(message):
 
 
 @bot.message_handler(content_types='text',
+                     func=lambda m: m.text == 'Изменить' and not check_its_teacher(m.from_user.id))
+def student_change_data(message):
+    bot.send_message(message.chat.id, "Начат процесс изменения данных")
+    msg = bot.reply_to(message, "Какой тип данных хотите изменить?", reply_markup=students_change_about_me_buttons())
+    bot.register_next_step_handler(msg, student_change_about_me)
+
+
+@bot.message_handler(content_types='text',
                      func=len(teacher.questions_arr) and teacher.questions_arr[-1].status)
 def student_send_answer(message):
     student = database.search_user(message.from_user.id)
-    teacher.questions_arr[-1].answers.append([student.full_name, student.group, message.text])
-    bot.send_message(message.chat.id, "Ваш ответ успешно добавлен")
+    if database.check_group_in_flow(student.group, teacher.questions_arr[-1].flow):
+        teacher.questions_arr[-1].answers.append([student.full_name, student.group, message.text])
+        bot.send_message(message.chat.id, "Ваш ответ успешно добавлен")
 
 
 @bot.message_handler(content_types='text')
 def student_send_answer(message):
-    # TODO: Проверка если пользователь не авторизован
-    bot.send_message(message.chat.id, "Вопрос либо закончился, либо еще не начат.")
+    student = database.search_user(message.from_user.id)
+    if student is None:
+        bot.send_message(message.chat.id, "Перед использованием бота, вам необходимо зарегистрироваться: /start")
+    else:
+        bot.send_message(message.chat.id, "Вопрос для Вашей группы либо закончился, либо еще не начат.")

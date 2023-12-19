@@ -51,8 +51,13 @@ def teacher_get_flows(flows: dict):
 
 
 def students_main_menu():
-    items = ['Поменять группу']
+    items = ['Поменять информацию о себе']
     return create_keyboard_layout(items, back_button=False)
+
+
+def students_change_about_me_buttons():
+    items = ['ФИО', 'Группа']
+    return create_keyboard_layout(items, back_button=True)
 
 
 def only_back_button():

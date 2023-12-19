@@ -55,8 +55,10 @@ def sort_two_column_csv_file(filename: str):
 
 
 def add_column_to_csv(filename: str, new_list: []):
-    backup_filename = 'backup_' + filename
+    # Dirty hack
+    backup_filename = folder_tables + 'backup_' + filename.split('/', -1)[-1]
     shutil.copy(filename, backup_filename)
+
     with open(backup_filename, 'r') as ist, \
             open(filename, 'w') as ost:
         csv_reader = csv.reader(ist, delimiter=';')
@@ -119,7 +121,7 @@ def add_marks_to_table_performance(question: Question):
 
             if not find:
                 mark = 1 if answer_student.lower() == question.answer.lower() else 0
-                add_row_user_in_table_performance(filename, full_name, group)
+                add_row_user_in_table_performance(path_file, full_name, group)
                 column_answers.append(mark)
 
     add_column_to_csv(path_file, column_answers)
@@ -160,16 +162,11 @@ class Database:
 
     def write_users_csv(self, user: User):
         filename = 'users.csv'
-        if os.path.isfile(filename) is True:
-            with open(filename, 'a') as f:
-                writer = csv.writer(f, delimiter=';')
-                writer.writerow([user.tid, user.full_name, user.group])
-        else:
-            with open('users.csv', 'w') as f:
-                writer = csv.writer(f, delimiter=';')
-                field = ["tid", "full_name", "group", "flow"]
-                writer.writerow(field)
-                writer.writerow([user.tid, user.full_name, user.group])
+        with open(filename, 'w') as f:
+            writer = csv.writer(f, delimiter=';')
+            field = ["tid", "full_name", "group", "flow"]
+            writer.writerow(field)
+            writer.writerow([user.tid, user.full_name, user.group])
 
     def write_flows_csv(self):
         try:
@@ -211,6 +208,15 @@ class Database:
         for flow in self.flows:
             if flow_name == flow:
                 return self.flows[flow_name].groups.split(', ')
+
+    def check_group_in_flow(self, group_name: str, flow_name: str):
+        groups = self.get_groups_flow(flow_name)
+
+        for group in groups:
+            if group == group_name:
+                return True
+
+        return False
 
     def get_tid_students_flow(self, flow_name: str):
         groups = self.get_groups_flow(flow_name)
