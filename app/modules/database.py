@@ -2,6 +2,7 @@ import csv
 import os
 import shutil
 from datetime import datetime
+import yadisk
 
 from app.modules.json_parser import settings, write_config
 from app.modules.question_handler import Question
@@ -9,6 +10,10 @@ from app.modules.question_handler import Question
 folder_tables = "stats/"
 if not os.path.isdir(folder_tables):
     os.mkdir(folder_tables)
+
+folder_backups = "stats/backups/"
+if not os.path.isdir(folder_backups):
+    os.mkdir(folder_backups)
 
 
 class User:
@@ -54,13 +59,12 @@ def sort_two_column_csv_file(filename: str):
             writer.writerow(row)
 
 
-def add_column_to_csv(filename: str, new_list: []):
-    # Dirty hack
-    backup_filename = folder_tables + 'backup_' + filename.split('/', -1)[-1]
-    shutil.copy(filename, backup_filename)
+def add_column_to_csv(filepath: str, filename: str, new_list: []):
+    backup_filename = folder_backups + 'backup_' + filename
+    shutil.copy(filepath, backup_filename)
 
     with open(backup_filename, 'r') as ist, \
-            open(filename, 'w') as ost:
+            open(filepath, 'w') as ost:
         csv_reader = csv.reader(ist, delimiter=';')
         csv_writer = csv.writer(ost, delimiter=';')
         for i, row in enumerate(csv_reader, 0):
@@ -124,8 +128,20 @@ def add_marks_to_table_performance(question: Question):
                 add_row_user_in_table_performance(path_file, full_name, group)
                 column_answers.append(mark)
 
-    add_column_to_csv(path_file, column_answers)
+    add_column_to_csv(path_file, filename, column_answers)
     sort_two_column_csv_file(path_file)
+    send_file_to_yandex_disk(path_file)
+
+
+def send_file_to_yandex_disk(filepath: str):
+    token = settings["yandex_token"]
+    filename = filepath.split("/", -1)[-1]
+
+    y = yadisk.YaDisk(token=token)
+    if not y.is_dir('ScheduleBot'):
+        y.mkdir('ScheduleBot')
+
+    y.upload(filepath, f'/ScheduleBot/{filename}', overwrite=True)
 
 
 class Database:
@@ -148,14 +164,15 @@ class Database:
 
         self.flows = dict()
         try:
-            with open('flows.csv', 'r') as f:
+            with open('flows.csv', 'r+') as f:
                 reader = csv.reader(f, delimiter=';')
-                next(reader)
-                for name, groups in reader:
-                    flow = Flow()
-                    flow.name = name
-                    flow.groups = groups
-                    self.flows[name] = flow
+                if len(list(reader)) != 0:
+                    next(reader)
+                    for name, groups in reader:
+                        flow = Flow()
+                        flow.name = name
+                        flow.groups = groups
+                        self.flows[name] = flow
 
         except IOError:
             print(f"Ошибка: {IOError.strerror}.\nСоздаем новый файл.")
@@ -183,6 +200,11 @@ class Database:
     def add_flow(self, flow: Flow):
         self.flows[flow.name] = flow
         self.write_flows_csv()
+
+    def search_flow(self, flow_name: str):
+        if flow_name in self.flows:
+            return True
+        return False
 
     def remove_flow(self, flow_name: str):
         del self.flows[flow_name]
@@ -228,5 +250,3 @@ class Database:
                     user_list.append(user.tid)
 
         return user_list
-
-    # TODO: Send file to YD

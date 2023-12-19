@@ -49,7 +49,6 @@ class TeacherHandler:
             if self.check_back_button(message):
                 return
 
-            # TODO: Проверка входной строки
             groups_list: str = message.text
             flow = self.flows_arr[-1]
             flow.groups = groups_list
@@ -67,10 +66,12 @@ class TeacherHandler:
             if self.check_back_button(message):
                 return
 
-            # TODO: Проверка входной строки
             flow_delete = message.text
-            self.flows_del.append(flow_delete)
+            if not database.search_flow(flow_delete):
+                bot.reply_to(message, "Данного потока не существует", reply_markup=teacher_accept_button())
+                return
 
+            self.flows_del.append(flow_delete)
             msg = bot.reply_to(message, "Вы уверены в удалении потока? (Да/нет)", reply_markup=teacher_accept_button())
             bot.register_next_step_handler(msg, self.teacher_delete_flow_accept)
         except Exception as e:
@@ -109,7 +110,10 @@ class TeacherHandler:
                 bot.reply_to(message, "Дождитель конца прошлого вопроса", reply_markup=teacher_main_menu())
                 return
 
-            # TODO: Проверка входной строки
+            if not database.search_flow(message.text):
+                bot.reply_to(message, "Данного потока не существует", reply_markup=teacher_accept_button())
+                return
+
             question = Question()
             question.flow = message.text
             self.questions_arr.append(question)
@@ -171,6 +175,8 @@ class TeacherHandler:
             bot.send_message(chat_id, status, reply_markup=teacher_main_menu())
             time.sleep(60.0 * question.time)
             add_marks_to_table_performance(question)
+
+            self.questions_arr.clear()
 
         except Exception as e:
             bot.reply_to(message, f'Ошибка в создании вопроса: {e}')

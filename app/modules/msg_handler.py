@@ -67,6 +67,10 @@ def admin_questions_create(message):
 @bot.message_handler(content_types='text',
                      func=lambda m: m.text == 'Посмотреть ответы' and check_its_teacher(m.from_user.id))
 def admin_question_view(message):
+    if len(teacher.questions_arr) == 0:
+        bot.send_message(message.chat.id, "Актуальных вопросов нет", reply_markup=teacher_main_menu())
+        return
+
     question = teacher.questions_arr[-1]
     res_text = f"Вопрос: {question.name}\nПравильный ответ: {question.answer}\n"
     for answer in question.answers:
@@ -98,6 +102,11 @@ def student_change_data(message):
 def student_send_answer(message):
     student = database.search_user(message.from_user.id)
     if database.check_group_in_flow(student.group, teacher.questions_arr[-1].flow):
+        for full_name, group, answer in teacher.questions_arr[-1].answers:
+            if full_name == student.full_name and group == student.group:
+                bot.send_message(message.chat.id, "Вы уже отвечали на данный вопрос")
+                return
+
         teacher.questions_arr[-1].answers.append([student.full_name, student.group, message.text])
         bot.send_message(message.chat.id, "Ваш ответ успешно добавлен")
 
