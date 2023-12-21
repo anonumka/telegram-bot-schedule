@@ -162,8 +162,11 @@ class Database:
                         user.group = group
                         user.flow = flows
                         self.users[tid] = user
+                else:
+                    open('users.csv', 'w')
+                    message_log_system(1, f"File `users.csv` is empty. Created a new file.")
         except IOError:
-            message_log_system(1, f"File `users.csv` is not exist: {IOError.strerror}")
+            message_log_system(1, f"File `users.csv` not found: {IOError.strerror}")
 
         self.flows = dict()
         try:
@@ -177,9 +180,12 @@ class Database:
                         flow.name = name
                         flow.groups = groups
                         self.flows[name] = flow
+                else:
+                    open('flows.csv', 'w')
+                    message_log_system(1, f"File `flows.csv` is empty. Created a new file.")
 
         except IOError:
-            message_log_system(1, f"File `flows.csv` is not exist: {IOError.strerror}")
+            message_log_system(2, f"File `flows.csv` not found: {IOError.strerror}")
 
     def write_users_csv(self):
         filename = 'users.csv'
