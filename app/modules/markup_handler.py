@@ -56,7 +56,7 @@ def students_main_menu():
 
 
 def students_change_about_me_buttons():
-    items = ['ФИО', 'Группа']
+    items = ['ФИО', 'Группу']
     return create_keyboard_layout(items, back_button=True)
 
 

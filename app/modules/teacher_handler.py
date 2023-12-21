@@ -120,7 +120,7 @@ class TeacherHandler:
                 return
 
             if not database.search_flow(message.text):
-                bot.reply_to(message, "Данного потока не существует", reply_markup=teacher_accept_button())
+                bot.reply_to(message, "Данного потока не существует", reply_markup=only_back_button())
                 return
 
             question = Question()
@@ -185,7 +185,7 @@ class TeacherHandler:
 
             tid_list = database.get_tid_students_flow(question.flow)
             for tid in tid_list:
-                bot.send_message(tid, f"{question.name}\nНа ответ вам {question.time} минут.")
+                bot.send_message(tid, f"Вопрос: {question.name}\nНа ответ вам {question.time} минут.")
 
             status = question.start_question()
             bot.send_message(chat_id, status, reply_markup=teacher_main_menu())

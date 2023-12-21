@@ -54,10 +54,10 @@ def student_change_about_me(message: types.Message):
         answer = message.text
         if answer == "ФИО":
             msg = bot.reply_to(message, "Теперь введите новое ФИО")
-            bot.register_next_step_handler(msg, student_group)
+            bot.register_next_step_handler(msg, student_change_full_name)
         elif answer == "Группу":
             msg = bot.reply_to(message, "Теперь введите новую группу")
-            bot.register_next_step_handler(msg, student_group)
+            bot.register_next_step_handler(msg, student_change_group)
         else:
             msg = bot.reply_to(message, "Неверно введен текст. Введите ФИО или Группу")
             bot.register_next_step_handler(msg, student_change_about_me)

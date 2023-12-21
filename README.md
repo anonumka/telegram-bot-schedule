@@ -42,6 +42,9 @@ source ./.venv/bin/activate
 pip install -r requirements.txt
 ```
 
+Если вы планируете запускать бота из-под Windows, используйте
+модуль `win-unicode-console`
+
 # Настройка конфига
 
 Перед запуском бота необходимо настроить конфигурационный файл:

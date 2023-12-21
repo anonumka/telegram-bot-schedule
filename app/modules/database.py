@@ -1,7 +1,7 @@
 import csv
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 import yadisk
 
 from app.modules.json_parser import settings, write_config
@@ -27,15 +27,12 @@ class Flow:
     name: str
     groups: str
 
-    def append(self, flow):
-        pass
-
 
 def check_exist_teacher(tid: int):
-    message_log_system(0, f"{tid} is teacher")
     if settings["tid_teacher"] == "":
         settings["tid_teacher"] = tid
         write_config(settings)
+        message_log_system(0, f"{tid} now is teacher")
         return 0
 
     return 1
@@ -103,7 +100,8 @@ def add_marks_to_table_performance(question: Question):
         next(reader)
         rows = list(reader)
 
-        column_answers = [question.time]
+        time = datetime.now()
+        column_answers = [time.strftime("%Y-%m-%d_%H.%M")]
         for row in rows:
             find = False
             for full_name, group, answer_student in question.answers:
@@ -150,52 +148,49 @@ class Database:
     def __init__(self):
         self.users = dict()
         try:
-            with open('users.csv', 'r+') as f:
-                reader = csv.reader(f, delimiter=';')
-                message_log_system(0, f"Count of users: {len(list(reader))}")
-                if len(list(reader)) != 0:
-                    next(reader)
-                    for tid, name, group, flows in reader:
+            with open('users.csv', 'r') as f:
+                reader = list(csv.reader(f, delimiter=';'))
+                message_log_system(0, f"Count of flows: {len(reader) - 1}")
+                if len(reader) > 0:
+                    for tid, name, group in reader[1:]:
                         user = User()
-                        user.tid = tid
+                        user.tid = int(tid)
                         user.full_name = name
                         user.group = group
-                        user.flow = flows
                         self.users[tid] = user
                 else:
-                    open('users.csv', 'w')
-                    message_log_system(1, f"File `users.csv` is empty. Created a new file.")
+                    message_log_system(1, f"File `users.csv` is empty")
         except IOError:
+            open('users.csv', 'w')
             message_log_system(1, f"File `users.csv` not found: {IOError.strerror}")
 
         self.flows = dict()
         try:
-            with open('flows.csv', 'r+') as f:
-                reader = csv.reader(f, delimiter=';')
-                message_log_system(0, f"Count of flows: {len(list(reader))}")
-                if len(list(reader)) != 0:
-                    next(reader)
-                    for name, groups in reader:
+            with open('flows.csv', 'r') as f:
+                reader = list(csv.reader(f, delimiter=';'))
+                message_log_system(0, f"Count of flows: {len(list(reader)) - 1}")
+                if len(reader) > 0:
+                    for name, groups in reader[1:]:
                         flow = Flow()
                         flow.name = name
                         flow.groups = groups
                         self.flows[name] = flow
                 else:
-                    open('flows.csv', 'w')
-                    message_log_system(1, f"File `flows.csv` is empty. Created a new file.")
-
+                    message_log_system(1, f"File `flows.csv` is empty")
         except IOError:
-            message_log_system(2, f"File `flows.csv` not found: {IOError.strerror}")
+            open('flows.csv', 'w')
+            message_log_system(1, f"File `flows.csv` not found: {IOError.strerror}")
+
 
     def write_users_csv(self):
         filename = 'users.csv'
         try:
             with open(filename, 'w') as f:
                 writer = csv.writer(f, delimiter=';')
-                field = ["tid", "full_name", "group", "flow"]
+                field = ["tid", "full_name", "group"]
                 writer.writerow(field)
-                for tid, full_name, group in self.users:
-                    writer.writerow([tid, full_name, group])
+                for tid in self.users.keys():
+                    writer.writerow([self.users[tid].tid, self.users[tid].full_name, self.users[tid].group])
         except IOError:
             message_log_system(1, f"File `{filename}` failed on create: {IOError.strerror}")
 
@@ -259,9 +254,9 @@ class Database:
         groups = self.get_groups_flow(flow_name)
 
         user_list = []
-        for user in list(self.users):
+        for tid_user in list(self.users):
             for group in groups:
-                if group == user.group:
-                    user_list.append(user.tid)
+                if group == self.users[tid_user].group:
+                    user_list.append(self.users[tid_user].tid)
 
         return user_list

@@ -38,7 +38,7 @@ def admin_flows_menu(message):
                      func=lambda m: m.text == 'Добавить поток' and check_its_teacher(m.from_user.id))
 def admin_flow_add(message):
     message_log_system(0, f"{message.chat.id} send {message.text}")
-    bot.send_message(message.chat.id, "Начат процесс создания потока", reply_markup=None)
+    bot.send_message(message.chat.id, "Начат процесс создания потока", reply_markup=only_back_button())
     msg_send = bot.reply_to(message, "Введите название для потока.\nНапример: КИ20 ИВТ ЧТ 12:00")
     bot.register_next_step_handler(msg_send, teacher.teacher_start_create_flow)
 
@@ -47,11 +47,13 @@ def admin_flow_add(message):
                      func=lambda m: m.text == 'Удалить поток' and check_its_teacher(m.from_user.id))
 def admin_flow_rem(message):
     message_log_system(0, f"{message.chat.id} send {message.text}")
-    bot.send_message(message.chat.id, "Начат процесс удаления вопроса")
-    msg = bot.reply_to(message, "Выберите поток, который будет удалён",
-                       reply_markup=teacher_get_flows(database.flow_dict()))
-    bot.register_next_step_handler(msg, teacher.teacher_delete_flow)
-    pass
+    if len(database.flow_dict()) > 0:
+        bot.send_message(message.chat.id, "Начат процесс удаления вопроса")
+        msg = bot.reply_to(message, "Выберите поток, который будет удалён",
+                           reply_markup=teacher_get_flows(database.flow_dict()))
+        bot.register_next_step_handler(msg, teacher.teacher_delete_flow)
+    else:
+        bot.send_message(message.chat.id, "Список потоков пуст", reply_markup=teacher_main_menu())
 
 
 @bot.message_handler(content_types='text',
@@ -107,26 +109,27 @@ def student_change_data(message):
     bot.register_next_step_handler(msg, student_change_about_me)
 
 
-@bot.message_handler(content_types='text',
-                     func=len(teacher.questions_arr) and teacher.questions_arr[-1].status)
+@bot.message_handler(content_types='text')
 def student_send_answer(message):
-    student = database.search_user(message.from_user.id)
-    if database.check_group_in_flow(student.group, teacher.questions_arr[-1].flow):
-        message_log_system(0, f"{message.chat.id} send {message.text}")
-        for full_name, group, answer in teacher.questions_arr[-1].answers:
-            if full_name == student.full_name and group == student.group:
-                bot.send_message(message.chat.id, "Вы уже отвечали на данный вопрос")
-                return
+    message_log_system(0, f"{message.chat.id} send {message.text}")
+    if len(teacher.questions_arr) > 0 and teacher.questions_arr[-1].status:
+        student = database.search_user(message.from_user.id)
+        if database.check_group_in_flow(student.group, teacher.questions_arr[-1].flow):
+            for full_name, group, answer in teacher.questions_arr[-1].answers:
+                if full_name == student.full_name and group == student.group:
+                    bot.send_message(message.chat.id, "Вы уже отвечали на данный вопрос",
+                                     reply_markup=students_main_menu)
+                    return
 
-        teacher.questions_arr[-1].answers.append([student.full_name, student.group, message.text])
-        bot.send_message(message.chat.id, "Ваш ответ успешно добавлен")
+            teacher.questions_arr[-1].answers.append([student.full_name, student.group, message.text])
+            bot.send_message(message.chat.id, "Ваш ответ успешно добавлен", reply_markup=students_main_menu)
 
 
 @bot.message_handler(content_types='text')
 def student_send_unknown(message):
-    message_log_system(0, f"{message.chat.id} send {message.text}")
     student = database.search_user(message.from_user.id)
     if student is None:
         bot.send_message(message.chat.id, "Перед использованием бота, вам необходимо зарегистрироваться: /start")
     else:
-        bot.send_message(message.chat.id, "Вопрос для Вашей группы либо закончился, либо еще не начат.")
+        bot.send_message(message.chat.id, "Вопрос для Вашей группы либо закончился, либо еще не начат.",
+                         reply_markup=students_main_menu)
