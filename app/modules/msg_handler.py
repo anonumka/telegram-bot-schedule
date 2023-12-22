@@ -3,7 +3,8 @@ from app.modules.database import check_its_teacher, check_exist_teacher
 from app.modules.students_handler import student_full_name, student_change_about_me
 
 from app.modules.markup_handler import (teacher_flows_button, teacher_question_button, teacher_main_menu,
-                                        teacher_get_flows, students_change_about_me_buttons)
+                                        teacher_get_flows, students_change_about_me_buttons, only_back_button,
+                                        students_main_menu)
 from app.modules.teacher_handler import TeacherHandler
 from app.modules.logger import message_log_system
 
@@ -18,7 +19,7 @@ def send_welcome(message):
         bot.send_message(message.chat.id, "Добро пожаловать! Вы назначены преподавателем. ")
         bot.reply_to(message, "Выберите действие", reply_markup=teacher_main_menu())
     elif check_its_teacher(message.from_user.id):
-        bot.send_message(message.chat.id, "Вы уже преподаватель.")
+        bot.send_message(message.chat.id, "Вы уже зарегистрированы как преподаватель.")
     elif database.search_user(message.from_user.id) is not None:
         msg_send = "Вы уже есть в системе."
         bot.send_message(message.chat.id, msg_send)
@@ -27,8 +28,32 @@ def send_welcome(message):
         bot.register_next_step_handler(msg, student_full_name)
 
 
-@bot.message_handler(content_types='text',
-                     func=lambda m: m.text == 'Потоки' and check_its_teacher(m.from_user.id))
+@bot.message_handler(commands=['flow'], func=lambda m: check_its_teacher(m.from_user.id))
+def teacher_send_flow(message):
+    message_log_system(0, f"{message.chat.id} send {message.text}")
+    data = message.text.split(' ', 2)
+    if len(data) < 3 or (data[1] != "add" and data[1] != "rem"):
+        bot.send_message(message.chat.id, "Неверно введена команда, связанная с потоками.\n"
+                                          "Пример команды: \n"
+                                          "/flow add Информатика 2022\n"
+                                          "/flow rem Информатика 2022")
+        bot.reply_to(message, "Выберите действие", reply_markup=teacher_main_menu())
+        return
+
+    if len(teacher.questions_arr) > 0 and teacher.questions_arr[-1].status:
+        bot.send_message(message.chat.id, "Запрещено редактировать потоки во время активного вопроса")
+        bot.reply_to(message, "Выберите действие", reply_markup=teacher_main_menu())
+        return
+
+    if data[1] == "add":
+        flow_name = data[2]
+        teacher.teacher_create_flow(message, flow_name)
+    elif data[1] == 'rem':
+        flow_name = data[2]
+        teacher.teacher_delete_flow(message, flow_name)
+
+
+@bot.message_handler(content_types='text',  func=lambda m: m.text == 'Потоки' and check_its_teacher(m.from_user.id))
 def admin_flows_menu(message):
     message_log_system(0, f"{message.chat.id} send {message.text}")
     bot.send_message(message.chat.id, "Выберите действие с потоком", reply_markup=teacher_flows_button())
@@ -38,9 +63,14 @@ def admin_flows_menu(message):
                      func=lambda m: m.text == 'Добавить поток' and check_its_teacher(m.from_user.id))
 def admin_flow_add(message):
     message_log_system(0, f"{message.chat.id} send {message.text}")
+    if teacher.flows_add is not None:
+        bot.send_message(message.chat.id, f"Еще действует регистрация в поток {teacher.flows_add.name}")
+        bot.reply_to(message, "Выберите действие", reply_markup=teacher_main_menu())
+        return
+
     bot.send_message(message.chat.id, "Начат процесс создания потока", reply_markup=only_back_button())
     msg_send = bot.reply_to(message, "Введите название для потока.\nНапример: КИ20 ИВТ ЧТ 12:00")
-    bot.register_next_step_handler(msg_send, teacher.teacher_start_create_flow)
+    bot.register_next_step_handler(msg_send, teacher.teacher_create_flow)
 
 
 @bot.message_handler(content_types='text',
@@ -56,8 +86,7 @@ def admin_flow_rem(message):
         bot.send_message(message.chat.id, "Список потоков пуст", reply_markup=teacher_main_menu())
 
 
-@bot.message_handler(content_types='text',
-                     func=lambda m: m.text == 'Вопросы' and check_its_teacher(m.from_user.id))
+@bot.message_handler(content_types='text', func=lambda m: m.text == 'Вопросы' and check_its_teacher(m.from_user.id))
 def admin_questions_menu(message):
     message_log_system(0, f"{message.chat.id} send {message.text}")
     bot.send_message(message.chat.id, "Выберите действие с вопросом", reply_markup=teacher_question_button())
@@ -109,27 +138,52 @@ def student_change_data(message):
     bot.register_next_step_handler(msg, student_change_about_me)
 
 
-@bot.message_handler(content_types='text')
+@bot.message_handler(commands=['register'])
+def student_send_register(message):
+    if len(teacher.flows_add) > 0:
+        student = database.search_user(message.from_user.id)
+        if student is None:
+            bot.send_message(message.chat.id, "Перед регистрацией в поток, необходимо зарегистрироваться в "
+                                              "системе: /start", reply_markup=students_main_menu())
+            return
+
+        for other_tid in teacher.flows_add[-1].students:
+            if student.tid == other_tid:
+                bot.send_message(message.chat.id, "Вы уже записаны в данном потоке", reply_markup=students_main_menu())
+            else:
+                teacher.flows_add[-1].students.append(student.tid)
+                bot.send_message(message.chat.id, f"Вы успешно добавлены в поток {teacher.flows_add[-1].name}",
+                                 reply_markup=students_main_menu())
+                message_log_system(0, f"{student.full_name} from {student.group} registered to "
+                                      f"{teacher.flows_add[-1].name}")
+
+
+@bot.message_handler(commands=['answer'])
 def student_send_answer(message):
-    message_log_system(0, f"{message.chat.id} send {message.text}")
     if len(teacher.questions_arr) > 0 and teacher.questions_arr[-1].status:
         student = database.search_user(message.from_user.id)
         if database.check_group_in_flow(student.group, teacher.questions_arr[-1].flow):
             for full_name, group, answer in teacher.questions_arr[-1].answers:
                 if full_name == student.full_name and group == student.group:
                     bot.send_message(message.chat.id, "Вы уже отвечали на данный вопрос",
-                                     reply_markup=students_main_menu)
+                                     reply_markup=students_main_menu())
                     return
 
             teacher.questions_arr[-1].answers.append([student.full_name, student.group, message.text])
-            bot.send_message(message.chat.id, "Ваш ответ успешно добавлен", reply_markup=students_main_menu)
+            bot.send_message(message.chat.id, "Ваш ответ успешно добавлен", reply_markup=students_main_menu())
 
 
 @bot.message_handler(content_types='text')
 def student_send_unknown(message):
-    student = database.search_user(message.from_user.id)
-    if student is None:
-        bot.send_message(message.chat.id, "Перед использованием бота, вам необходимо зарегистрироваться: /start")
-    else:
-        bot.send_message(message.chat.id, "Вопрос для Вашей группы либо закончился, либо еще не начат.",
-                         reply_markup=students_main_menu)
+    message_log_system(0, f"{message.chat.id} send {message.text}")
+    if len(teacher.flows_add) == 0 and len(teacher.questions_arr) == 0:
+        student = database.search_user(message.from_user.id)
+        if student is None:
+            bot.send_message(message.chat.id, "Перед использованием бота, вам необходимо зарегистрироваться: /start")
+        else:
+            bot.send_message(message.chat.id, "Регистрация в новый поток ещё не началась",
+                             reply_markup=students_main_menu)
+    elif len(teacher.flows_add) > 0:
+        bot.send_message(message.chat.id, "Для добавления в поток, необходимо использовать команду: /register")
+    elif len(teacher.questions_arr) > 0:
+        bot.send_message(message.chat.id, "Для ответа на вопрос, необходимо использовать команду /answer и ответ")

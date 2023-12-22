@@ -12,76 +12,68 @@ from telebot import types
 class TeacherHandler:
 
     def __init__(self):
-        self.flows_arr = []
+        self.flows_add = None
         self.questions_arr = []
-        self.flows_del = []
+        self.flows_del = None
 
-    def check_back_button(self, message):
+    def check_back_button(self, message) -> bool:
         if message.text == "Назад":
-            self.flows_arr.clear()
+            self.flows_add.clear()
             self.flows_del.clear()
             self.questions_arr.clear()
 
             bot.clear_step_handler_by_chat_id(chat_id=message.chat.id)
             bot.reply_to(message, "Выберите действие", reply_markup=teacher_main_menu())
-            return 1
-        return 0
+            return True
+        return False
 
-    def teacher_start_create_flow(self, message: types.Message):
-        try:
-            if self.check_back_button(message):
-                return
-
-            flow = Flow()
-            flow.name = message.text
-            if len(self.flows_arr) == 0:
-                self.flows_arr.append(flow)
-            else:
-                self.flows_arr[-1] = flow
-
-            msg = bot.reply_to(message, "Перечислите группы в потоке\n"
-                                        "Например: КИ20-06б, КИ20-07б, КИ20-08б")
-            bot.register_next_step_handler(msg, self.teacher_end_create_flow)
-        except Exception as e:
-            bot.reply_to(message, f'Ошибка в создании потока: {e}')
-            message_log_system(2, f"Failed creation a flow: {e}")
-
-    def teacher_end_create_flow(self, message: types.Message):
-        try:
-            if self.check_back_button(message):
-                return
-
-            groups_list: str = message.text
-            flow = self.flows_arr[-1]
-            flow.groups = groups_list
-            self.flows_arr.clear()
-
-            database.add_flow(flow)
-            message_log_system(0, f"{message.chat.id} create a flow "
-                                  f"`{flow.name}` with `{flow.groups}` groups")
-
+    def teacher_create_flow(self, message: types.Message, name_flow: str = None) -> None:
+        flow = Flow()
+        flow.name = name_flow if name_flow is not None else message.text
+        if self.flows_add is not None:
+            bot.send_message(message.chat.id, f"Еще действует регистрация в поток {self.flows_add.name}")
+            bot.reply_to(message, "Выберите действие", reply_markup=teacher_main_menu())
+        elif len(self.questions_arr) > 0 and self.questions_arr[-1].status:
+            bot.send_message(message.chat.id, "Запрещено редактировать потоки во время активного вопроса")
+            bot.reply_to(message, "Выберите действие", reply_markup=teacher_main_menu())
+        else:
+            self.flows_add = flow
             chat_id = message.from_user.id
-            bot.send_message(chat_id, "Поток добавлен успешно", reply_markup=teacher_main_menu())
-        except Exception as e:
-            bot.reply_to(message, f'Ошибка в создании потока: {e}')
-            message_log_system(2, f"Failed creation a flow: {e}")
+            try:
+                bot.send_message(chat_id, "Поток создан. Студентам даётся пять минут на регистрацию",
+                                 reply_markup=teacher_main_menu())
+                time.sleep(60.0 * 5)
+                database.add_flow(self.flows_add)
+                self.flows_add = None
+            except Exception as e:
+                bot.reply_to(message, f'Ошибка в отправки сообщения: {e}')
+                message_log_system(2, f"Failed creation a flow: {e}")
 
-    def teacher_delete_flow(self, message: types.Message):
-        try:
-            if self.check_back_button(message):
-                return
 
-            flow_delete = message.text
+    def teacher_delete_flow(self, message: types.Message, flow_name: str = None) -> None:
+        flow_delete = flow_name if not None else message.text
+        if self.check_back_button(message):
+            return
+        elif not database.search_flow(flow_delete):
+             bot.reply_to(message, "Данного потока не существует", reply_markup=teacher_accept_button())
+        elif len(self.questions_arr) > 0 and self.questions_arr[-1].status:
+            bot.send_message(message.chat.id, "Запрещено редактировать потоки во время активного вопроса")
+            bot.reply_to(message, "Выберите действие", reply_markup=teacher_main_menu())
+        else:
             if not database.search_flow(flow_delete):
                 bot.reply_to(message, "Данного потока не существует", reply_markup=teacher_accept_button())
                 return
 
-            self.flows_del.append(flow_delete)
-            msg = bot.reply_to(message, "Вы уверены в удалении потока? (Да/нет)", reply_markup=teacher_accept_button())
-            bot.register_next_step_handler(msg, self.teacher_delete_flow_accept)
-        except Exception as e:
-            bot.reply_to(message, f'Ошибка в удалении потока: {e}')
-            message_log_system(2, f"Failed deleting a flow: {e}")
+            if len(self.flows_del) == 0:
+                self.flows_del.append(flow_delete)
+            else:
+                self.flows_del[-1] = flow_delete
+            try:
+                msg = bot.reply_to(message, "Вы уверены в удалении потока? (Да/нет)", reply_markup=teacher_accept_button())
+                bot.register_next_step_handler(msg, self.teacher_delete_flow_accept)
+            except Exception as e:
+                bot.reply_to(message, f'Ошибка в удалении потока: {e}')
+                message_log_system(2, f"Failed deleting a flow: {e}")
 
     def teacher_delete_flow_accept(self, message: types.Message):
         try:
@@ -116,7 +108,7 @@ class TeacherHandler:
 
             if len(self.questions_arr) > 0:
                 bot.clear_step_handler_by_chat_id(chat_id=message.chat.id)
-                bot.reply_to(message, "Дождитель конца прошлого вопроса", reply_markup=teacher_main_menu())
+                bot.reply_to(message, "Дождитеcь конца прошлого вопроса", reply_markup=teacher_main_menu())
                 return
 
             if not database.search_flow(message.text):

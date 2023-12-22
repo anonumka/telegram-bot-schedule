@@ -25,7 +25,7 @@ class User:
 
 class Flow:
     name: str
-    groups: str
+    students: []
 
 
 def check_exist_teacher(tid: int):
@@ -150,7 +150,7 @@ class Database:
         try:
             with open('users.csv', 'r') as f:
                 reader = list(csv.reader(f, delimiter=';'))
-                message_log_system(0, f"Count of flows: {len(reader) - 1}")
+                message_log_system(0, f"Count of loaded students: {len(reader) - 1}")
                 if len(reader) > 0:
                     for tid, name, group in reader[1:]:
                         user = User()
@@ -168,7 +168,7 @@ class Database:
         try:
             with open('flows.csv', 'r') as f:
                 reader = list(csv.reader(f, delimiter=';'))
-                message_log_system(0, f"Count of flows: {len(list(reader)) - 1}")
+                message_log_system(0, f"Count of loaded flows: {len(list(reader)) - 1}")
                 if len(reader) > 0:
                     for name, groups in reader[1:]:
                         flow = Flow()
@@ -199,11 +199,12 @@ class Database:
         try:
             with open(filename, 'w') as f:
                 writer = csv.writer(f, delimiter=';')
-                field = ["name", "groups"]
+                field = ["name", "students"]
                 writer.writerow(field)
                 for flow_name in list(self.flows):
                     flow = self.flows[flow_name]
-                    writer.writerow([flow.name, flow.groups])
+                    students_tid = ','.join(flow.students)
+                    writer.writerow([flow.name, students_tid])
         except IOError:
             message_log_system(1, f"File `{filename}` failed on create: {IOError.strerror}")
 
