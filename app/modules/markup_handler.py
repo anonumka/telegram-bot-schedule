@@ -42,7 +42,7 @@ def teacher_accept_button():
 
 
 def teacher_question_button():
-    items = ['Задать вопрос', 'Посмотреть ответы']
+    items = ['Добавить вопрос', 'Удалить вопрос', 'Задать вопрос', 'Остановить вопрос', 'Посмотреть ответы']
     return create_keyboard_layout(items, back_button=True)
 
 
