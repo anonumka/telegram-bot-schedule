@@ -218,9 +218,10 @@ class TeacherHandler:
             return
 
         self.question.date = answer
-        if database.search_question(self.question.flow, answer) is not None:
-            bot.reply_to(message, f"На {answer} у потока {self.question.flow} уже запланирован вопрос",
-                         reply_markup=teacher_main_menu())
+        other_question = database.search_question(self.question.flow, answer)
+        if other_question is not None:
+            bot.reply_to(message, f"На {answer} у потока {self.question.flow} уже запланирован вопрос: "
+                                  f"'{other_question.question}'", reply_markup=teacher_main_menu())
             return
 
 
@@ -268,7 +269,7 @@ class TeacherHandler:
 
             bot.reply_to(message, "Вопрос отправлен", reply_markup=teacher_main_menu())
 
-            time.sleep(300.0)
+            time.sleep(60.0 * 5)
             if self.question.status is True:
                 self.question.stop_question()
 
@@ -335,6 +336,6 @@ def rem_question(question_info: [], message: types.Message):
         bot.reply_to(message, f"Вопрос для потока {flow} на {date} не найден", reply_markup=teacher_main_menu())
         return
 
-    # database.delete_question(question)
+    database.delete_question(question)
     bot.reply_to(message, "Успех", reply_markup=teacher_main_menu())
     return

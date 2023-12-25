@@ -22,11 +22,21 @@ class Flow:
 class Database:
     def __init__(self):
         self.users = dict()
+        self.read_users_csv()
+
+        self.flows = dict()
+        self.read_flows_csv()
+
+        self.questions = []
+        self.read_questions_csv()
+
+
+    def read_users_csv(self):
         try:
             with open('users.csv', 'r') as f:
                 reader = list(csv.reader(f, delimiter=';'))
                 message_log_system(0, f"Count of loaded students: {len(reader) - 1}")
-                if len(reader) > 0:
+                if len(reader)-1 > 0:
                     for tid, name, group in reader[1:]:
                         user = User()
                         user.tid = int(tid)
@@ -39,12 +49,13 @@ class Database:
             open('users.csv', 'w')
             message_log_system(1, f"File `users.csv` not found: {IOError.strerror}")
 
-        self.flows = dict()
+
+    def read_flows_csv(self):
         try:
             with open('flows.csv', 'r') as f:
                 reader = list(csv.reader(f, delimiter=';'))
                 message_log_system(0, f"Count of loaded flows: {len(list(reader)) - 1}")
-                if len(reader) > 0:
+                if len(reader)-1 > 0:
                     for name, students in reader[1:]:
                         flow = Flow()
                         flow.name = name
@@ -57,17 +68,18 @@ class Database:
             open('flows.csv', 'w')
             message_log_system(1, f"File `flows.csv` not found: {IOError.strerror}")
 
-        self.questions = []
+
+    def read_questions_csv(self):
         try:
             with open('questions.csv', 'r') as f:
                 reader = list(csv.reader(f, delimiter=';'))
                 message_log_system(0, f"Count of loaded questions: {len(list(reader)) - 1}")
-                if len(reader) > 0:
-                    for flow, date, question, answer in reader[1:]:
+                if len(reader)-1 > 0:
+                    for flow, date, q, answer in reader[1:]:
                         question = Question()
                         question.flow = flow
                         question.date = date
-                        question.question = question
+                        question.question = q
                         question.answer = answer
 
                         self.questions.append(question)
@@ -99,7 +111,7 @@ class Database:
                 writer.writerow(field)
                 for flow_name in list(self.flows):
                     flow = self.flows[flow_name]
-                    students_tid = ','.join(flow.students)
+                    students_tid = ','.join(str(student) for student in flow.students)
                     writer.writerow([flow.name, students_tid])
         except IOError:
             message_log_system(1, f"File `{filename}` failed on create: {IOError.strerror}")
@@ -168,7 +180,7 @@ class Database:
         return None
 
 
-    def check_student_in_flow(self, tid_student: str, flow_name: str):
+    def check_student_in_flow(self, tid_student: int, flow_name: str):
         flow = self.search_flow(flow_name)
 
         for tid in flow.students:

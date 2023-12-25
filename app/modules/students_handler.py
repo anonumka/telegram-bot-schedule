@@ -16,7 +16,7 @@ def check_back_button(message):
 
 def student_full_name(message: types.Message):
     try:
-        user = User
+        user = User()
         user.full_name = message.text
         user.tid = message.from_user.id
         database.add_user(user)
@@ -40,7 +40,7 @@ def student_group(message: types.Message):
         chat_id = message.from_user.id
         bot.send_message(chat_id,
                          f"Вы успешно добавлены в базу со следующими данными:\n"
-                         f"Имя:{user.full_name}, группа:{user.group}")
+                         f"Ваше ФИО: {user.full_name}\nВаша группа: {user.group}")
     except Exception as e:
         bot.reply_to(message, f'Ошибка ввода во время создания студента: {e}')
         message_log_system(2, f"Failed creation a student: {e}")

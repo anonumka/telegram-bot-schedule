@@ -55,6 +55,11 @@ def students_main_menu():
     return create_keyboard_layout(items, back_button=False)
 
 
+def users_send_start():
+    items = ['/start']
+    return create_keyboard_layout(items, back_button=False)
+
+
 def students_change_about_me_buttons():
     items = ['ФИО', 'Группу']
     return create_keyboard_layout(items, back_button=True)
