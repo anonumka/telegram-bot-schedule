@@ -219,8 +219,8 @@ class TeacherHandler:
 
         self.question.date = answer
         if database.search_question(self.question.flow, answer) is not None:
-            bot.reply_to(message, f"На {answer} у потока {self.question.flow} уже запланирован вопрос",
-                         reply_markup=teacher_main_menu())
+            bot.reply_to(message, f"На {answer} у потока {self.question.flow} уже запланирован вопрос: "
+                                  f"'{self.question.question}'", reply_markup=teacher_main_menu())
             return
 
 
@@ -335,6 +335,6 @@ def rem_question(question_info: [], message: types.Message):
         bot.reply_to(message, f"Вопрос для потока {flow} на {date} не найден", reply_markup=teacher_main_menu())
         return
 
-    # database.delete_question(question)
+    database.delete_question(question)
     bot.reply_to(message, "Успех", reply_markup=teacher_main_menu())
     return

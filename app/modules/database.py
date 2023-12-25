@@ -22,11 +22,21 @@ class Flow:
 class Database:
     def __init__(self):
         self.users = dict()
+        self.read_users_csv()
+
+        self.flows = dict()
+        self.read_flows_csv()
+
+        self.questions = []
+        self.read_questions_csv()
+
+
+    def read_users_csv(self):
         try:
             with open('users.csv', 'r') as f:
                 reader = list(csv.reader(f, delimiter=';'))
                 message_log_system(0, f"Count of loaded students: {len(reader) - 1}")
-                if len(reader) > 0:
+                if len(reader)-1 > 0:
                     for tid, name, group in reader[1:]:
                         user = User()
                         user.tid = int(tid)
@@ -39,12 +49,13 @@ class Database:
             open('users.csv', 'w')
             message_log_system(1, f"File `users.csv` not found: {IOError.strerror}")
 
-        self.flows = dict()
+
+    def read_flows_csv(self):
         try:
             with open('flows.csv', 'r') as f:
                 reader = list(csv.reader(f, delimiter=';'))
                 message_log_system(0, f"Count of loaded flows: {len(list(reader)) - 1}")
-                if len(reader) > 0:
+                if len(reader)-1 > 0:
                     for name, students in reader[1:]:
                         flow = Flow()
                         flow.name = name
@@ -57,12 +68,13 @@ class Database:
             open('flows.csv', 'w')
             message_log_system(1, f"File `flows.csv` not found: {IOError.strerror}")
 
-        self.questions = []
+
+    def read_questions_csv(self):
         try:
             with open('questions.csv', 'r') as f:
                 reader = list(csv.reader(f, delimiter=';'))
                 message_log_system(0, f"Count of loaded questions: {len(list(reader)) - 1}")
-                if len(reader) > 0:
+                if len(reader)-1 > 0:
                     for flow, date, question, answer in reader[1:]:
                         question = Question()
                         question.flow = flow
